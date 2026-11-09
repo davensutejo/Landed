@@ -18,6 +18,7 @@ COPY data ./data
 COPY --from=web /app/dist ./dist
 # Accounts live in a SQLite file: mount a volume so they survive redeploys:
 #   docker run -v landed-db:/app/db ...
+RUN mkdir -p /app/db && chmod 777 /app/db
 ENV LANDED_DB=/app/db/landed.sqlite3
 VOLUME /app/db
 EXPOSE 8000

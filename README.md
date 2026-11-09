@@ -1,3 +1,13 @@
+---
+title: Landed
+emoji: 📦
+colorFrom: yellow
+colorTo: gray
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # 到岸 Landed
 
 Cross-border landed-cost and localization agent (第二届全国人工智能应用创新大赛 · 出海).
