@@ -20,6 +20,5 @@ COPY --from=web /app/dist ./dist
 #   docker run -v landed-db:/app/db ...
 RUN mkdir -p /app/db && chmod 777 /app/db
 ENV LANDED_DB=/app/db/landed.sqlite3
-VOLUME /app/db
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
