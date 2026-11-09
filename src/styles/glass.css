@@ -1,0 +1,105 @@
+/* Concept 15: Apple-Style Liquid Glass System */
+.liquid-glass {
+  --pointer-angle: 135deg;
+  position: relative;
+  border-radius: var(--squircle-r, var(--r-md));
+  backdrop-filter: blur(14px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(180%) brightness(1.05);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.06)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 24px rgba(255, 255, 255, 0.08),
+    0 10px 40px rgba(20, 17, 15, 0.18);
+  transition:
+    transform 0.4s var(--ease-out),
+    box-shadow 0.4s var(--ease-out),
+    background 0.4s var(--ease-out);
+}
+
+/* Rotating Specular Ring — matches squircle curve via corner-shape + SVG stroke ring */
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--squircle-r, inherit);
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--pointer-angle),
+    rgba(255, 255, 255, 0.8),
+    rgba(201, 162, 75, 0.55),
+    rgba(255, 255, 255, 0.08),
+    rgba(232, 100, 60, 0.4),
+    rgba(255, 255, 255, 0.8)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@supports (corner-shape: squircle) {
+  .liquid-glass,
+  .liquid-glass::before {
+    corner-shape: squircle;
+  }
+}
+
+/* Fallback exact superellipse SVG ring injected by squircle.js when corner-shape is unsupported */
+.has-svg-squircle.liquid-glass::before {
+  display: none;
+}
+
+.squircle-svg-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.liquid-glass:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 32px rgba(255, 255, 255, 0.14),
+    0 16px 48px rgba(20, 17, 15, 0.26);
+}
+
+.btn--primary.liquid-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(232, 100, 60, 0.34),
+    rgba(20, 17, 15, 0.55)
+  );
+  color: var(--cream);
+}
+
+.cta .btn--primary.liquid-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 17, 15, 0.86),
+    rgba(42, 37, 32, 0.72)
+  );
+  color: var(--cream);
+}
+
+/* Mobile spacing rule: narrower glass elements with >= 12px gaps so blurs never merge */
+@media (max-width: 767px) {
+  .liquid-glass {
+    max-width: calc(100vw - 32px);
+  }
+  .header-actions,
+  .hero__ctas,
+  .cta__input-row {
+    gap: 14px !important;
+  }
+}

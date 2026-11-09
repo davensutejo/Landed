@@ -1,0 +1,81 @@
+/* Interactive ask widgets. Colors derive from currentColor so they work on the
+   dark workspace chat and the light landing-page console. */
+.ask-card {
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  transition: opacity 0.2s;
+}
+.ask-card.is-busy { opacity: 0.6; pointer-events: none; }
+.ask-card.is-locked { opacity: 0.75; }
+.ask-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ask-title { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.ask-meta { font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.65; margin: 0; }
+.ask-facts { font-size: 0.75rem; opacity: 0.75; margin: 0; }
+.ask-q { font-size: 1rem; margin: 2px 0 0; font-weight: 500; }
+.ask-why { font-size: 0.8rem; opacity: 0.75; margin: 0; }
+.ask-cands { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ask-cand {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ask-cand b { font-family: var(--font-mono); font-weight: 600; }
+.ask-cand span { opacity: 0.7; }
+.ask-cand.is-win { border-color: #2fa866; background: rgba(61, 220, 132, 0.12); }
+.ask-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.ask-btn {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  cursor: pointer;
+  min-width: 64px;
+}
+.ask-btn:hover:not(:disabled) { background: color-mix(in srgb, currentColor 18%, transparent); }
+.ask-btn--primary { background: var(--vermilion); border-color: var(--vermilion); color: #fff; }
+.ask-btn--primary:hover:not(:disabled) { background: var(--vermilion); filter: brightness(1.1); }
+.ask-btn--ghost { background: transparent; border-style: dashed; }
+.ask-btn:disabled { cursor: default; }
+.ask-btn.is-chosen { outline: 2px solid var(--gold); outline-offset: 2px; }
+.ask-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.ask-field { display: grid; gap: 4px; font-size: 0.78rem; }
+.ask-field em { font-style: normal; opacity: 0.6; font-size: 0.7rem; }
+.ask-field input[type='number'], .ask-field select {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  color: inherit;
+  width: 100%;
+}
+.ask-field select option { color: #14110f; }
+.ask-seg { display: flex; gap: 14px; padding: 6px 0; }
+.ask-seg label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.ask-err { color: var(--vermilion); font-size: 0.78rem; margin: 0; }
+@media (max-width: 480px) {
+  .ask-fields { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* keep cards inside narrow chat columns */
+.msg--widget, .console-msg--widget { min-width: 0; width: 100%; }
+.ask-card { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.ask-cand { flex: 0 1 auto; min-width: 0; }
+.ask-card > * { min-width: 0; }
+.ask-cands { min-width: 0; max-width: 100%; }
+.ask-cand { max-width: 100%; }

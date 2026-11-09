@@ -1,0 +1,65 @@
+/* PRELOADER (Concept 8) */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-preloader);
+  background: var(--cream);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+}
+
+.preloader__inner {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+}
+
+.preloader__grid {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  grid-template-rows: repeat(14, 1fr);
+  gap: 4px;
+  width: min(82vw, 480px);
+  aspect-ratio: 24 / 14;
+}
+
+.preloader__cell {
+  background: var(--ink);
+  opacity: 0.08;
+  border-radius: 2px;
+  transform: scale(0.85);
+}
+
+.preloader__cell.is-monogram {
+  background: var(--vermilion);
+}
+
+.preloader__hud {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.16em;
+  border-top: 1px solid rgba(20, 17, 15, 0.15);
+  padding-top: 16px;
+}
+
+.preloader__left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.preloader__counter {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--vermilion);
+  font-variant-numeric: tabular-nums;
+}

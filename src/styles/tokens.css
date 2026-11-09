@@ -1,0 +1,67 @@
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  /* Renaissance pigments on parchment */
+  --cream:        #F3EDE0;
+  --cream-2:      #EBE3D2;
+  --paper:        #FAF6EC;
+  --ink:          #14110F;
+  --ink-2:        #2A2520;
+  --night:        #0A0910;
+  --violet-deep:  #1B1038;
+  --ultramarine:  #2B3A8C;
+  --vermilion:    #E8643C;
+  --gold:         #C9A24B;
+  --live:         #3DDC84;
+
+  /* Monet palette (Concept 6) */
+  --monet-haze:   #CFD8E8;
+  --monet-peri:   #A9B9DE;
+  --monet-lily:   #7FA7A0;
+  --monet-sage:   #B7C99A;
+  --monet-rose:   #E8B7C2;
+  --monet-gold:   #F2D9A0;
+  --monet-blue:   #6A7FB5;
+
+  /* Typography */
+  --font-display: "Instrument Serif", Georgia, "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-sans:    "Instrument Sans Variable", "Instrument Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono:    "JetBrains Mono", "PingFang SC", "Microsoft YaHei", monospace;
+  --font-cjk-display: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --font-cjk-sans:    "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+
+  --text-display: clamp(3.25rem, 9vw, 9.5rem);
+  --text-h2:      clamp(2.5rem, 6vw, 6rem);
+  --text-h3:      clamp(1.75rem, 3vw, 2.75rem);
+  --text-body:    clamp(1.0625rem, 1.15vw, 1.1875rem);
+  --text-caption: 25px;
+  --text-mono:    0.75rem;
+
+  /* Layout & Spacing */
+  --container-max: 1440px;
+  --gutter:        clamp(16px, 4vw, 64px);
+  --section-space: clamp(96px, 14vw, 220px);
+
+  /* Squircle Radii (Concept 19) */
+  --r-sm: 14px;
+  --r-md: 24px;
+  --r-lg: 40px;
+  --r-xl: 64px;
+
+  /* Easing */
+  --ease-medici: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Z-index layers */
+  --z-base:      1;
+  --z-curtain:   10;
+  --z-header:    100;
+  --z-grain:     200;
+  --z-cursor:    300;
+  --z-preloader: 400;
+  --z-debug:     500;
+}

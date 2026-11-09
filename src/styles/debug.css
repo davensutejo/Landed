@@ -1,0 +1,20 @@
+/* DEBUG OVERLAY (Section 11) */
+[data-concept].debug-highlight {
+  outline: 2px dashed var(--vermilion) !important;
+  outline-offset: -2px !important;
+}
+
+.debug-chip {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: var(--z-debug);
+  background: var(--vermilion);
+  color: var(--cream);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}

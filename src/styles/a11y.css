@@ -1,0 +1,213 @@
+/* ACCESSIBILITY + COMPATIBILITY LAYER (loaded last) */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 96px;
+}
+
+/* Safe areas (notched phones) */
+.site-header { top: max(20px, calc(env(safe-area-inset-top) + 8px)); padding-inline: max(16px, env(safe-area-inset-left), env(safe-area-inset-right)); }
+.footer__main { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+
+/* Long words / CJK never force horizontal scroll */
+h1, h2, h3, p, li, a, span { overflow-wrap: break-word; }
+
+/* Fallbacks for browsers without svh / clip / text-wrap */
+@supports not (min-height: 100svh) { body { min-height: 100vh; } }
+@supports not (overflow: clip) { body { overflow-x: hidden; } }
+
+/* Contrast: gold on cream is ~2:1, use a darker gold for small text on light bg */
+.marginalia,
+.header-nav__link span,
+.brand-link__motto { color: #7A5F17; opacity: 1; }
+.hero .marginalia, .cta .marginalia, .site-footer .marginalia { color: var(--gold); }
+.folio-tag, .folio-num { opacity: 1; color: #5A524A; }
+.eyebrow { opacity: 1; }
+
+/* Minimum readable sizes for small mono labels */
+.folio-tag, .folio-num, .marginalia, .header-nav__link, .mobile-menu-btn,
+.mobile-sheet__meta, .status-chip, .brand-link__motto { font-size: max(12px, 0.75rem); }
+
+/* Touch targets >= 44px */
+.header-nav__link, .footer__col a, .mobile-sheet__link, .sample-chip, .cc-reset {
+  display: inline-flex; align-items: center; min-height: 44px;
+}
+.footer__col a { display: flex; }
+.cc-toggle { min-height: 44px; display: flex; align-items: center; gap: 10px; }
+.cc-toggle input, .cc-slider input[type="range"] { min-width: 24px; min-height: 24px; }
+
+/* Visible focus on dark surfaces and form fields */
+:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 4px; box-shadow: 0 0 0 5px rgba(243, 237, 224, 0.9); }
+.hero :focus-visible, .cta :focus-visible, .site-footer :focus-visible { outline-color: var(--gold); box-shadow: 0 0 0 5px rgba(10, 9, 16, 0.9); }
+.cta__input:focus-visible { outline-offset: 2px; }
+
+/* Hover effects only where hover exists */
+@media (hover: none) {
+  .btn:hover { transform: none; }
+  .custom-cursor { display: none !important; }
+}
+
+/* Phone fixes */
+@media (max-width: 480px) {
+  .sample-prompts { gap: 8px; }
+  .sample-chip { white-space: normal; text-align: left; }
+  .stats-strip { grid-template-columns: 1fr; }
+  .hero__ctas { flex-direction: column; align-items: flex-start; }
+  .footer__cols { grid-template-columns: 1fr; }
+  .cc-table { display: block; overflow-x: auto; }
+}
+@media (max-width: 767px) {
+  .features__row { -webkit-overflow-scrolling: touch; }
+  .cc-panel { min-width: 0; }
+}
+/* Landscape phones: avoid 100svh sections clipping content */
+@media (max-height: 520px) and (orientation: landscape) {
+  .section { min-height: auto !important; }
+}
+
+/* Zoom/large text: let flex rows wrap */
+.hero__ctas, .sample-prompts, .cc-sliders { flex-wrap: wrap; }
+
+/* Reduced motion: stop all non-essential animation */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee-track { transform: none !important; }
+  .live-dot::after { display: none; }
+}
+
+/* Windows High Contrast / forced colors */
+@media (forced-colors: active) {
+  .film-grain, .scroll-progress { display: none; }
+  .btn, .cta__input, .sample-chip, .mobile-menu-btn { border: 1px solid ButtonText; }
+  :focus-visible { outline: 2px solid Highlight; box-shadow: none; }
+}
+
+/* No-JS: never trap users behind the preloader */
+.no-js .preloader { display: none !important; }
+
+@media print {
+  .film-grain, .scroll-progress, .custom-cursor, .preloader, .site-header { display: none !important; }
+}
+
+/* THREE DESIGN MOVES: stack cleanly instead of cramped columns / hidden swipe carousel */
+.features__row { align-items: stretch; }
+.feature-card { min-width: 0; height: 100%; }
+.feature-card__title, .feature-card__desc { overflow-wrap: anywhere; hyphens: auto; }
+.feature-card__top { gap: 12px; flex-wrap: wrap; }
+.feature-card__top .eyebrow { flex: 1 1 auto; min-width: 0; letter-spacing: 0.1em; }
+
+@media (max-width: 1100px) {
+  .features__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+    scroll-snap-type: none;
+    margin-inline: 0;
+    padding: 0;
+    gap: 20px;
+    perspective: none;
+    max-width: 720px;
+    margin-inline: auto;
+  }
+  .feature-card {
+    flex: none;
+    width: 100%;
+    height: auto;
+    padding: clamp(24px, 5vw, 36px);
+    gap: 18px;
+  }
+  .feature-card__title { font-size: clamp(1.6rem, 5.5vw, 2.25rem); }
+}
+@media (max-width: 480px) {
+  .feature-card { padding: 24px 20px; }
+  .feature-card__icon-wrap { width: 64px; height: 64px; }
+  .feature-card .fleuron { width: 10px; height: 10px; }
+}
+
+/* EVIDENCE: stat labels were truncated with an ellipsis at 9px; let them wrap */
+.stat-box__label { white-space: normal; overflow: visible; text-overflow: clip; font-size: max(12px, clamp(9px, 1vw, 12px)); line-height: 1.45; letter-spacing: 0.06em; }
+@media (max-width: 700px) {
+  .stats-strip { grid-template-columns: minmax(0, 1fr); }
+  .stat-box { flex-direction: row; align-items: center; gap: 16px; }
+  .stat-box__top { flex: 0 0 auto; min-width: 5.5ch; }
+}
+
+/* Source tiles: darker text for contrast, allow wrapping on narrow screens */
+.logo-tile__word { color: rgba(20, 17, 15, 0.78); }
+@media (max-width: 600px) {
+  .logo-tile__word { white-space: normal; text-align: center; font-size: 0.9rem; overflow-wrap: anywhere; }
+  .logo-tile__glyph { display: none; }
+}
+
+/* Provenance pills / canvas meta were ~10px */
+.prov-pill, .prov-meta, .canvas-card__meta, .flow-label { font-size: max(12px, 0.75rem); }
+.prov-pill { white-space: normal; }
+
+/* Footer: 4 link columns are cramped on tablets */
+@media (max-width: 1024px) {
+  .footer__top { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.footer__col span, .footer__col a { overflow-wrap: anywhere; }
+
+/* Audit-trail canvas: shorter on phones/landscape, touch-friendly hint */
+@media (max-width: 767px) {
+  .canvas-viewport { min-height: 420px; height: 70svh; }
+  .canvas-hint span { font-size: 12px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .canvas-viewport { height: 90svh; min-height: 300px; }
+}
+
+/* Manifesto: guarantee the readable fallback text if the JS layout is not running */
+@media (max-width: 767px) { .manifesto__body { min-height: 420px; } }
+
+/* Hero: avoid tiny meta text and overflow on phones */
+.hero__meta { font-size: max(12px, 0.75rem); }
+@media (max-width: 480px) { .hero__stage-wrap { right: -30%; opacity: 0.5; } }
+
+/* Preloader HUD small text */
+.preloader__label, .preloader__right { font-size: max(12px, 0.75rem); }
+
+/* Higher-specificity guard so no earlier rule can bring the swipe carousel back */
+.features .features__row .feature-card { flex: none; scroll-snap-align: none; }
+@media (max-width: 1100px) {
+  .features .features__row { display: grid; grid-template-columns: minmax(0, 1fr); overflow: visible; scroll-snap-type: none; }
+}
+
+/* Dither glow canvas was squashed into an oval by the global canvas max-width:100% */
+.feature-card__dither-glow { max-width: none; width: 96px; height: 96px; inset: -12px; }
+@media (hover: none) { .feature-card:hover .feature-card__dither-glow { opacity: 0; } }
+
+/* CJK sub-heading lines were overlapping the English title */
+.section-title .zh, .moat-card__title .zh { line-height: 1.3; }
+.section-title .zh { margin-bottom: 0.5em; }
+
+/* PROVENANCE: align every row to the same pill column and separate rows */
+.cc-provenance { gap: 0; }
+.cc-provenance li {
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 4px 16px;
+  align-items: start;
+  padding-block: 12px;
+  border-top: 1px solid rgba(20, 17, 15, 0.1);
+}
+.cc-provenance li:first-child { border-top: 0; padding-top: 0; }
+.cc-provenance .prov-pill {
+  width: 100%;
+  text-align: center;
+  padding: 4px 6px;
+  line-height: 1.3;
+  align-self: start;
+}
+.cc-provenance .prov-meta { grid-column: 2; }
+@media (max-width: 480px) {
+  .cc-provenance li { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .cc-provenance .prov-pill, .cc-provenance .prov-meta { grid-column: 1; }
+  .cc-provenance .prov-pill { width: auto; justify-self: start; padding-inline: 10px; }
+}

@@ -1,0 +1,349 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "liga";
+  scroll-behavior: auto;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--ink);
+  overflow-x: clip;
+  min-height: 100svh;
+  position: relative;
+}
+
+img,
+canvas,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: var(--z-debug);
+  background: var(--ink);
+  color: var(--cream);
+  padding: 12px 20px;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: top 0.3s var(--ease-medici);
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Display & Editorial Typography */
+.display-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-display);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-h2);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+p {
+  font-size: var(--text-body);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* Concept 10: One Italic Word */
+.ital {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--vermilion);
+  display: inline-block;
+  padding-right: 0.04em;
+}
+
+.hero .ital,
+.showreel .ital {
+  background: linear-gradient(135deg, var(--vermilion) 15%, var(--gold) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Concept 12: All-caps Eyebrows */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: inherit;
+  opacity: 0.88;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Figure Captions (25px / 700 Instrument Sans) */
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: clamp(1.15rem, 1.6vw, var(--text-caption));
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 14px;
+  letter-spacing: -0.01em;
+}
+
+/* Concept 13: Pulsing Live Dots */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  flex-shrink: 0;
+}
+
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: live-pulse 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+@keyframes live-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+.live-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Concept 19: Squircles — explicitly apply to pseudo-elements so outlines match */
+.squircle {
+  --squircle-r: var(--r-md);
+  border-radius: var(--squircle-r);
+}
+
+.squircle::before,
+.squircle::after {
+  border-radius: inherit;
+}
+
+@supports (corner-shape: squircle) {
+  .squircle,
+  .squircle::before,
+  .squircle::after,
+  .feature-card__double-rule,
+  .feature-card__double-rule::after {
+    corner-shape: squircle;
+  }
+}
+
+/* Concept 14: Sparkle Icon Utility */
+.icon-sparkle {
+  color: var(--gold);
+  flex-shrink: 0;
+  transform-origin: center;
+}
+
+/* Marginalia & Folios */
+.folio-tag,
+.folio-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  opacity: 0.65;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.marginalia {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+/* Scroll Progress Hairline */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--gold);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  z-index: var(--z-debug);
+  pointer-events: none;
+}
+
+/* Global Film Grain */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-grain);
+  opacity: 0.055;
+  mix-blend-mode: multiply;
+  background-image: radial-gradient(rgba(20, 17, 15, 0.45) 1px, transparent 0);
+  background-size: 3px 3px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 12px 24px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
+  position: relative;
+  user-select: none;
+}
+
+.btn:hover {
+  transform: scale(1.02);
+}
+
+.link-underline {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  position: relative;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  padding-bottom: 2px;
+}
+
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  width: 100%;
+  height: 1px;
+  background: var(--gold);
+  transform-origin: right;
+  transform: scaleX(1);
+  transition: transform 0.45s var(--ease-medici);
+}
+
+.link-underline:hover::after {
+  transform-origin: left;
+  transform: scaleX(0.35);
+}
+
+/* Inline Pixel Loader (8x8) */
+.pixel-loader {
+  display: inline-grid;
+  grid-template-columns: repeat(8, 2px);
+  grid-template-rows: repeat(8, 2px);
+  gap: 1px;
+  width: 23px;
+  height: 23px;
+  vertical-align: middle;
+}
+
+.pixel-loader i {
+  display: block;
+  width: 2px;
+  height: 2px;
+  background: var(--vermilion);
+  animation: pixel-wave 0.9s infinite ease-in-out alternate;
+}
+
+@keyframes pixel-wave {
+  0% { opacity: 0.15; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1); }
+}

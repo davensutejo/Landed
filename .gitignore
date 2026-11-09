@@ -1,0 +1,25 @@
+# dependencies / build output
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# secrets
+.env
+.env.local
+
+# runtime data
+logs/
+db/
+eval/results/
+
+# editor / AI tooling
+.vscode/
+.agents/
+.claude/
+skills-lock.json
+
+# demo-video + pitch-deck production (multi-GB renders)
+video/

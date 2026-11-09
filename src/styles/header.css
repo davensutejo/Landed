@@ -1,0 +1,163 @@
+/* HEADER */
+.site-header {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 16px;
+  pointer-events: none;
+  transition: transform 0.55s var(--ease-medici), opacity 0.4s ease;
+}
+
+.site-header.is-hidden {
+  transform: translateY(-140%);
+  opacity: 0;
+}
+
+.header-pill {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 980px;
+  padding: 8px 12px 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ink);
+  background: linear-gradient(135deg, rgba(250, 246, 236, 0.72), rgba(243, 237, 224, 0.42));
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-link__wordmark {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+}
+
+.brand-link__motto {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  border-left: 1px solid rgba(20, 17, 15, 0.2);
+  padding-left: 8px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-nav__link {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 4px;
+}
+
+.header-nav__link span {
+  color: var(--gold);
+  margin-right: 3px;
+}
+
+.header-nav__link em {
+  font-style: normal;
+  transition: all 0.25s ease;
+}
+
+.header-nav__link:hover em {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--vermilion);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.header-actions .btn,
+.status-chip {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header-nav {
+  min-width: 0;
+}
+
+/* Chip is the first thing to go when the pill gets tight */
+@media (max-width: 1180px) {
+  .status-chip {
+    display: none;
+  }
+  .header-nav {
+    gap: 12px;
+  }
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  background: rgba(20, 17, 15, 0.06);
+}
+
+.mobile-menu-btn {
+  display: none;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.mobile-sheet {
+  pointer-events: auto;
+  margin-top: 12px;
+  width: min(92vw, 400px);
+  padding: 28px 24px;
+  background: rgba(250, 246, 236, 0.88);
+  color: var(--ink);
+}
+
+.mobile-sheet__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mobile-sheet__link {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1.05;
+}
+
+.mobile-sheet__meta {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(20, 17, 15, 0.14);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}

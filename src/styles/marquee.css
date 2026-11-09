@@ -1,0 +1,54 @@
+/* CURTAIN SURFACE */
+.curtain-surface {
+  position: relative;
+  z-index: var(--z-curtain);
+  background: var(--cream);
+  border-top-left-radius: var(--r-xl);
+  border-top-right-radius: var(--r-xl);
+  box-shadow: 0 -24px 80px rgba(10, 9, 16, 0.45);
+  overflow: clip;
+}
+
+/* MARQUEE BANDS (Concept 18) */
+.marquee-band {
+  overflow: hidden;
+  padding-block: 26px;
+  background: var(--ink);
+  color: var(--cream);
+  border-bottom: 1px solid rgba(201, 162, 75, 0.3);
+  user-select: none;
+}
+
+.marquee-band--footer {
+  background: rgba(255, 255, 255, 0.03);
+  border-block: 1px solid rgba(201, 162, 75, 0.22);
+  padding-block: 18px;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding-right: 28px;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4.8vw, 4.5rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.marquee-ital {
+  font-style: italic;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--cream);
+}
+
+.marquee-star {
+  color: var(--gold);
+  flex-shrink: 0;
+}

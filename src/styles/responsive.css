@@ -1,0 +1,77 @@
+/* RESPONSIVE RULES (Section 7) */
+@media (min-width: 1600px), (min-height: 1000px) {
+  .section {
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header-nav,
+  .brand-link__motto,
+  .status-chip {
+    display: none;
+  }
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+  .hero__grid {
+    grid-template-columns: 1fr;
+  }
+  .hero__folio,
+  .hero__content {
+    grid-column: 1 / -1;
+  }
+  .hero__stage-wrap {
+    width: 78vw;
+    height: 78vw;
+    right: -12%;
+    opacity: 0.72;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Process vertical stack on mobile */
+  .process__flowchart {
+    display: none;
+  }
+  .process__track {
+    flex-direction: column;
+    width: 100%;
+    gap: 24px;
+  }
+  .process-panel {
+    width: 100%;
+    padding: 22px;
+  }
+  /* Smaller images on mobile with breathing room on both sides */
+  .showreel__stage,
+  .process-panel__art {
+    width: 92%;
+    margin-inline: auto;
+  }
+  .disco-canvas {
+    display: none;
+  }
+  .disco-svg-fallback {
+    display: block;
+  }
+  .cta__input-row {
+    flex-direction: column;
+  }
+  .footer__top {
+    grid-template-columns: 1fr;
+  }
+  .footer__cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .manifesto__line {
+    font-size: 22px;
+    line-height: 32px;
+  }
+  .manifesto__cameo {
+    width: 108px;
+    height: 108px;
+  }
+}

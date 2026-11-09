@@ -1,0 +1,54 @@
+{
+  "category": "small kitchen appliances: blenders, mixers, juicers and their accessories",
+  "snapshot_date": "2026-11-08",
+  "status_note": "Candidate set and discriminating attributes hand-built from the HS nomenclature, Chapter 85 notes and WCO GRI. CROSS/BTI references are illustrative pointers to search; verify each before citing a specific ruling number.",
+  "attributes": {
+    "has_electric_motor": "Does the product contain an electric motor that drives the blade?",
+    "motor_self_contained": "Is the motor built into the product itself (not a separate base or kitchen machine it attaches to)?",
+    "has_heating_element": "Does it heat food or liquid (e.g. soup-maker function)?",
+    "domestic_use": "Is it designed for household use (not commercial/industrial food preparation)?",
+    "is_accessory_only": "Is the item only a cup, jar or lid sold on its own, with no motor?"
+  },
+  "candidates": [
+    {
+      "hs": "8509.40",
+      "title": "Electromechanical domestic appliances with self-contained electric motor: food grinders and mixers; fruit or vegetable juice extractors",
+      "requires": {"has_electric_motor": true, "motor_self_contained": true, "has_heating_element": false, "domestic_use": true, "is_accessory_only": false},
+      "reasoning": "Heading 85.09 covers domestic electromechanical appliances with a self-contained motor; Chapter 85 notes include food grinders and mixers in 85.09 whatever their weight. A battery-powered portable blender is a food mixer with a self-contained motor.",
+      "legal_refs": ["HS heading 85.09", "Chapter 85 note on heading 85.09", "WCO GRI 1 and 6"],
+      "source_url": "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx"
+    },
+    {
+      "hs": "8516.79",
+      "title": "Electro-thermic domestic appliances, other",
+      "requires": {"has_electric_motor": true, "has_heating_element": true, "domestic_use": true, "is_accessory_only": false},
+      "reasoning": "If the appliance heats (blender-soup maker), the heating function can give it the character of an electrothermic appliance of heading 85.16; requires GRI 3 analysis of essential character.",
+      "legal_refs": ["HS heading 85.16", "WCO GRI 3(b)"],
+      "source_url": "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx"
+    },
+    {
+      "hs": "8509.90",
+      "title": "Parts of electromechanical domestic appliances of heading 85.09",
+      "requires": {"has_electric_motor": true, "motor_self_contained": false, "domestic_use": true, "is_accessory_only": false},
+      "reasoning": "A blade/jar unit that only works when mounted on a separate motor base is classified as a part, not as a complete appliance.",
+      "legal_refs": ["HS subheading 8509.90", "Section XVI note 2"],
+      "source_url": "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx"
+    },
+    {
+      "hs": "8438.80",
+      "title": "Machinery for the industrial preparation of food or drink, other",
+      "requires": {"has_electric_motor": true, "domestic_use": false, "is_accessory_only": false},
+      "reasoning": "Commercial or industrial food-preparation machines fall outside 85.09, which is limited to domestic appliances.",
+      "legal_refs": ["HS heading 84.38", "Chapter 85 note on heading 85.09 (domestic)"],
+      "source_url": "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx"
+    },
+    {
+      "hs": "3924.10",
+      "title": "Tableware and kitchenware, of plastics",
+      "requires": {"has_electric_motor": false, "is_accessory_only": true},
+      "reasoning": "A plastic (e.g. Tritan) cup or jar sold on its own, with no motor, is plastic kitchenware.",
+      "legal_refs": ["HS heading 39.24"],
+      "source_url": "https://www.wcoomd.org/en/topics/nomenclature/instrument-and-tools/hs-nomenclature-2022-edition.aspx"
+    }
+  ]
+}

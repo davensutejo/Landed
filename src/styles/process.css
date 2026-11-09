@@ -1,0 +1,78 @@
+/* PROCESS / HORIZONTAL SCROLL (Concept 17) */
+.process {
+  background: var(--cream-2);
+  padding-block: 0;
+}
+
+.process__pin-wrap {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: 64px;
+  overflow: hidden;
+}
+
+.process__top .section-header {
+  margin-bottom: 32px;
+}
+
+.process__viewport {
+  position: relative;
+  width: 100%;
+}
+
+.process__flowchart {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 280vw;
+  height: 380px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.flow-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  fill: var(--ink);
+}
+
+.process__track {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 48px;
+  padding-inline: var(--gutter);
+  width: max-content;
+}
+
+.process-panel {
+  width: min(78vw, 520px);
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 15, 0.14);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.process-panel__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2.3rem;
+  line-height: 1.05;
+}
+
+.process-panel__art {
+  overflow: hidden;
+  border: 1px solid rgba(20, 17, 15, 0.12);
+}
+
+.process-art-canvas {
+  width: 100%;
+  height: auto;
+}

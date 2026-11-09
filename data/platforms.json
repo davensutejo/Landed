@@ -1,0 +1,405 @@
+{
+ "snapshot_date": "2026-11-08",
+ "platforms": {
+  "amazon": {
+   "name": "Amazon",
+   "markets": [
+    "DE",
+    "AT",
+    "FR",
+    "IT",
+    "ES",
+    "NL",
+    "BE",
+    "PL",
+    "SE",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.15,
+      "electronics": 0.08
+     },
+     "low": 0.08,
+     "high": 0.15,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://www.amalytix.com/en/knowledge/controlling/amazon-seller-fees/",
+     "note": "Referral fee on the price incl. VAT and shipping. Most rates 8-15%, extremes 6-17%; cheaper tiers for items under about EUR 20 (dates differ between guides). Minimum EUR 0.30 per item. FBA, storage and ads not included."
+    },
+    "US": {
+     "typical": {
+      "default": 0.15,
+      "electronics": 0.08
+     },
+     "low": 0.08,
+     "high": 0.15,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://feedvisor.com/university/referral-fee/",
+     "note": "Most categories 15%, electronics about 8%. FBA, storage and ads not included."
+    }
+   }
+  },
+  "kaufland": {
+   "name": "Kaufland",
+   "markets": [
+    "DE"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.13,
+      "electronics": 0.07,
+      "fashion": 0.14
+     },
+     "low": 0.07,
+     "high": 0.14,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://netzgeeks.de/kaufland-gebuehren-2026/",
+     "note": "Commission on the gross price incl. shipping and VAT: about 7% electronics and household appliances, 10% tools/garden, 13% most others, 14% fashion. Guides disagree on the overall range (4-16% vs 6.5-14%). EUR 39.95 per month (Basic plan), not included."
+    }
+   }
+  },
+  "ebay": {
+   "name": "eBay",
+   "markets": [
+    "DE",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.14,
+      "electronics": 0.07,
+      "fashion": 0.12
+     },
+     "low": 0.07,
+     "high": 0.14,
+     "fixed": 0.45,
+     "status": "secondary",
+     "source_url": "https://onlinemarktplatz.de/267961/neue-ebay-gebuehren-fuer-gewebliche-verkaeufer-ab-1-juli-2026/",
+     "note": "German business sellers from 1 Jul 2026: 14% in many categories (home, sport, baby, pets), 7% for most tech, 12% clothing, on item price plus shipping, plus a fixed fee per order (EUR 0.35 up to EUR 10, EUR 0.45 above). Guides disagree on the tier limits."
+    },
+    "US": {
+     "typical": {
+      "default": 0.136
+     },
+     "low": 0.127,
+     "high": 0.136,
+     "fixed": 0.4,
+     "status": "secondary",
+     "source_url": "https://fastart.co/blog/marketplace-seller-fees-2026",
+     "note": "About 13.6% of the buyer-paid total for most categories (12.7% with a Store) plus USD 0.30 on orders up to USD 10, USD 0.40 above."
+    }
+   }
+  },
+  "otto": {
+   "name": "OTTO",
+   "markets": [
+    "DE"
+   ],
+   "fees": {}
+  },
+  "bol": {
+   "name": "bol.com",
+   "markets": [
+    "NL",
+    "BE"
+   ],
+   "fees": {}
+  },
+  "allegro": {
+   "name": "Allegro",
+   "markets": [
+    "PL",
+    "CZ",
+    "SK",
+    "HU"
+   ],
+   "fees": {}
+  },
+  "cdiscount": {
+   "name": "Cdiscount",
+   "markets": [
+    "FR"
+   ],
+   "fees": {}
+  },
+  "tiktok": {
+   "name": "TikTok Shop",
+   "markets": [
+    "DE",
+    "FR",
+    "IT",
+    "ES",
+    "IE",
+    "PL",
+    "NL",
+    "BE",
+    "AT",
+    "PT",
+    "HU",
+    "CZ",
+    "GR",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.09
+     },
+     "low": 0.07,
+     "high": 0.09,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://channelx.world/2025/12/tiktok-shop-fees-to-rise-to-9-in-europe/",
+     "note": "Commission raised from 5% to 9% on 8 Jan 2026 in Germany, France, Italy, Spain and Ireland; new sellers may get 4% for 60 days; electronics possibly 7%. The rate for the newer EU markets was not found, so only these five countries get it."
+    },
+    "US": {
+     "typical": {
+      "default": 0.06
+     },
+     "low": 0.05,
+     "high": 0.08,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://fastart.co/blog/marketplace-seller-fees-2026",
+     "note": "About 6% for most categories (some guides say 5% plus 2% + USD 0.30 processing)."
+    }
+   },
+   "fee_markets": {
+    "EU": [
+     "DE",
+     "FR",
+     "IT",
+     "ES",
+     "IE"
+    ]
+   }
+  },
+  "temu": {
+   "name": "Temu",
+   "markets": [
+    "DE",
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.12
+     },
+     "low": 0.08,
+     "high": 0.15,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://commercraft.com/en/how-to-sell-on-temu/",
+     "note": "Local / semi-managed sellers: guides say about 8-15% (one German guide 5-15%), by category. Temu publishes no price list; the rate is in the seller panel and agreement. Early-2023/24 joiners paid less."
+    }
+   }
+  },
+  "shein": {
+   "name": "SHEIN",
+   "markets": [
+    "DE",
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.1
+     },
+     "low": 0.08,
+     "high": 0.15,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://docs.m2ecloud.com/docs/understanding-shein-marketplace-fees-and-commission/",
+     "note": "About 10% after a 30-day 0% start; one older guide says 8-15% by category. SHEIN fulfilment costs extra."
+    }
+   }
+  },
+  "walmart": {
+   "name": "Walmart",
+   "markets": [
+    "US"
+   ],
+   "fees": {
+    "US": {
+     "typical": {
+      "default": 0.15
+     },
+     "low": 0.06,
+     "high": 0.2,
+     "fixed": 0.0,
+     "status": "secondary",
+     "source_url": "https://fastart.co/blog/marketplace-seller-fees-2026",
+     "note": "Referral fee by category, 6-20%; about 15% is the common figure."
+    }
+   }
+  },
+  "etsy": {
+   "name": "Etsy",
+   "markets": [
+    "US"
+   ],
+   "fees": {
+    "US": {
+     "typical": {
+      "default": 0.095
+     },
+     "low": 0.095,
+     "high": 0.095,
+     "fixed": 0.45,
+     "status": "secondary",
+     "source_url": "https://fastart.co/blog/marketplace-seller-fees-2026",
+     "note": "6.5% transaction fee + 3% payment processing, plus USD 0.25 per order and a USD 0.20 listing fee (treated as one fixed USD 0.45)."
+    }
+   }
+  },
+  "own_site": {
+   "name": "Own store",
+   "markets": [
+    "DE",
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "US"
+   ],
+   "fees": {
+    "EU": {
+     "typical": {
+      "default": 0.03
+     },
+     "low": 0.02,
+     "high": 0.04,
+     "fixed": 0.0,
+     "status": "assumption",
+     "source_url": "",
+     "note": "No marketplace commission. 3% is a placeholder for payment-processor fees; check your processor."
+    },
+    "US": {
+     "typical": {
+      "default": 0.03
+     },
+     "low": 0.02,
+     "high": 0.04,
+     "fixed": 0.0,
+     "status": "assumption",
+     "source_url": "",
+     "note": "No marketplace commission. 3% is a placeholder for payment-processor fees; check your processor."
+    }
+   }
+  },
+  "other": {
+   "name": "Other",
+   "markets": [
+    "DE",
+    "AT",
+    "BE",
+    "BG",
+    "HR",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "FI",
+    "FR",
+    "GR",
+    "HU",
+    "IE",
+    "IT",
+    "LV",
+    "LT",
+    "LU",
+    "MT",
+    "NL",
+    "PL",
+    "PT",
+    "RO",
+    "SK",
+    "SI",
+    "ES",
+    "SE",
+    "US"
+   ],
+   "fees": {}
+  }
+ }
+}

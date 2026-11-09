@@ -1,0 +1,60 @@
+/* SHOWREEL (Concept 2) */
+.showreel {
+  background: var(--night);
+  color: var(--cream);
+}
+
+.showreel__figure {
+  width: 100%;
+}
+
+.showreel__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #120E1E;
+  overflow: hidden;
+  border: 1px solid rgba(201, 162, 75, 0.35);
+}
+
+.showreel__video,
+.showreel__proc,
+.showreel__ascii {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.showreel__ascii {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.showreel__lens {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.25s ease;
+}
+
+.showreel__hud {
+  position: absolute;
+  bottom: 18px;
+  right: 22px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  padding: 6px 12px;
+  background: rgba(10, 9, 16, 0.72);
+  border: 1px solid rgba(201, 162, 75, 0.35);
+  border-radius: 8px;
+  color: var(--cream);
+}

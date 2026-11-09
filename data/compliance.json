@@ -1,0 +1,180 @@
+{
+  "snapshot_date": "2026-11-08",
+  "rules": [
+    {
+      "id": "un3481",
+      "markets": [
+        "EU",
+        "US"
+      ],
+      "when": {
+        "battery_builtin": true
+      },
+      "flag": "Lithium-ion battery contained in equipment: ship as UN 3481 under IATA Packing Instruction 967 (air). Cells must pass UN 38.3 testing; keep the test summary available to the carrier.",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://www.iata.org/en/programs/cargo/dgr/lithium-batteries/",
+      "plain": "A product with a built-in lithium battery counts as dangerous goods for airlines. The battery must pass a test called UN 38.3, and the carrier will ask for the test report.",
+      "plain_zh": "内置锂电池的产品对航空公司属于危险品：电池必须通过 UN 38.3 测试，承运商会要测试报告。"
+    },
+    {
+      "id": "food_contact_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "food_contact": true
+      },
+      "flag": "Food-contact materials must comply with Regulation (EC) No 1935/2004; plastic parts (e.g. Tritan) also need a declaration of compliance under Regulation (EU) No 10/2011.",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://food.ec.europa.eu/food-safety/chemical-safety/food-contact-materials_en",
+      "plain": "Anything that touches food must meet EU food-contact rules. Ask your supplier for a declaration of compliance.",
+      "plain_zh": "接触食品的材料必须符合欧盟食品接触材料规定，请向供应商索取符合性声明。"
+    },
+    {
+      "id": "ce_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "electrical": true
+      },
+      "flag": "Electrical product: CE marking with an EU declaration of conformity (EMC Directive 2014/30/EU; RoHS 2011/65/EU; low-voltage parts such as the charger under LVD 2014/35/EU).",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://single-market-economy.ec.europa.eu/single-market/ce-marking_en",
+      "plain": "Electrical products need a CE mark and an EU declaration of conformity, a paper from your supplier or test lab saying the product meets EU safety rules.",
+      "plain_zh": "电器产品需要 CE 标志和欧盟符合性声明（由供应商或检测机构出具，证明产品符合欧盟安全要求）。"
+    },
+    {
+      "id": "weee_battery_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "battery_builtin": true
+      },
+      "flag": "Electrical equipment and batteries: distance sellers must register as a producer in EACH EU country they sell to, with an authorised representative there. Registers differ by country (Germany: stiftung ear for WEEE and batteries, plus a battery take-back scheme; France: ADEME SYDEREP). Battery rules under Regulation (EU) 2023/1542 apply from 18 Aug 2025. Other countries have their own registers: check the one for your destination.",
+      "severity": "warning",
+      "status": "secondary",
+      "source_url": "https://www.taxually.com/blog/epr-obligations-by-country",
+      "plain": "Sellers of electrical products or batteries must register in each EU country they sell to, and appoint a local representative, because each country keeps its own register.",
+      "plain_zh": "卖电器或电池要在每个销售的欧盟国家各自注册（并指定当地代表），因为每个国家有自己的登记系统。"
+    },
+    {
+      "id": "eu_flat_duty_set",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "item_categories_gt": 1
+      },
+      "flag": "Parcel contains more than one tariff category, so the EUR 3 flat duty applies once per category. If the items are put up together as a set for retail sale (WCO GRI 3(b)), they may classify as one category. This is a classification judgment: confirm with a customs broker or a BTI ruling.",
+      "severity": "opportunity",
+      "status": "verified",
+      "source_url": "https://commission.europa.eu/news-and-media/news/ensuring-fairness-and-safety-eur3-customs-duty-low-value-parcels-2026-06-29_en",
+      "plain": "If one parcel holds several kinds of item, the €3 duty is charged per kind. Selling them as one set may count as one kind; a customs broker can confirm.",
+      "plain_zh": "一个包裹里有几种不同的商品，€3 关税按种类分别收。如果作为一个套装销售，可能算一种；请让报关行确认。"
+    },
+    {
+      "id": "fcc_us",
+      "markets": [
+        "US"
+      ],
+      "when": {
+        "electrical": true
+      },
+      "flag": "Electronic device with a motor and charging circuit: check FCC Part 15 (unintentional radiators) requirements before import.",
+      "severity": "warning",
+      "status": "secondary",
+      "source_url": "https://www.fcc.gov/oet/ea/rfdevice",
+      "plain": "Electronic products sold in the US usually need to meet FCC rules (limits on radio interference).",
+      "plain_zh": "在美国销售的电子产品通常需要符合 FCC 规定（无线电干扰限制）。"
+    },
+    {
+      "id": "us_china_tariffs",
+      "markets": [
+        "US"
+      ],
+      "when": {},
+      "flag": "China-origin goods pay an extra 12.5% Section 301 duty from 24 Jul 2026 (HTS 9903.05.31, CBP notice), included in the US price. The older Section 301 list duties (25% or 7.5%, by exact HTS line) are loaded only for some lines; where missing, the US price is a lower bound.",
+      "severity": "warning",
+      "status": "verified",
+      "source_url": "https://content.govdelivery.com/accounts/USDHSCBP/bulletins/421d887",
+      "plain": "Chinese-made goods pay an extra 12.5% US tariff (already in your price). An older list tariff of 7.5% or 25% may also apply, depending on the exact product.",
+      "plain_zh": "中国产的商品要多交 12.5% 美国附加关税（已计入价格）。根据具体产品，还可能叠加较早的 7.5% 或 25% 清单关税。"
+    },
+    {
+      "id": "gpsr_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {},
+      "flag": "General Product Safety Regulation (EU) 2023/988: a consumer product can only be sold in the EU if an EU-established responsible person exists (EU importer, authorised representative or fulfilment service provider). The online listing must show the manufacturer's and the responsible person's name, postal and electronic address.",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://eur-lex.europa.eu/eli/reg/2023/988/oj/eng",
+      "plain": "You need a company or person inside the EU who is responsible for product safety (an importer, an authorised representative or a fulfilment service). Your listing must show their name and address, and the manufacturer's.",
+      "plain_zh": "你需要在欧盟境内有一个对产品安全负责的公司或个人（进口商、授权代表或履约服务商），商品页要写明他们和制造商的名称与地址。"
+    },
+    {
+      "id": "textile_label_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "textile": true
+      },
+      "flag": "Textile Labelling Regulation (EU) No 1007/2011: label the fibre composition with the regulation's fibre names and percentages by weight, in descending order; '100%' or 'pure' only for single-fibre products.",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://eur-lex.europa.eu/eli/reg/2011/1007/oj/eng",
+      "plain": "Clothing and textiles must be labelled with their fibre content, for example 80% cotton, 20% polyester.",
+      "plain_zh": "服装和纺织品必须标明纤维成分，例如：棉 80%，涤纶 20%。"
+    },
+    {
+      "id": "cosmetic_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "cosmetic": true
+      },
+      "flag": "Cosmetics Regulation (EC) No 1223/2009: an EU-established responsible person is required, a cosmetic product safety report must exist before sale, and the product must be notified in the EU's CPNP portal before it is placed on the market.",
+      "severity": "blocker",
+      "status": "verified",
+      "source_url": "https://eur-lex.europa.eu/eli/reg/2009/1223/oj/eng",
+      "plain": "Cosmetics need an EU responsible person, a safety report, and registration of the product in the EU's CPNP portal before you sell.",
+      "plain_zh": "化妆品需要欧盟责任人、安全评估报告，并在销售前到欧盟 CPNP 系统登记产品。"
+    },
+    {
+      "id": "toy_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {
+        "toy": true
+      },
+      "flag": "EU toy safety rules (Directive 2009/48/EC, replaced by Regulation (EU) 2025/2509 from 1 August 2030): toys need a conformity assessment against the safety requirements, CE marking, technical documentation and an EU declaration of conformity. Confirm the exact steps for your toy's age group and materials.",
+      "severity": "blocker",
+      "status": "secondary",
+      "source_url": "https://single-market-economy.ec.europa.eu/sectors/toys/toy-safety_en",
+      "plain": "Toys need a CE mark, test documents and an EU declaration of conformity before you sell.",
+      "plain_zh": "玩具销售前需要 CE 标志、检测文件和欧盟符合性声明。"
+    },
+    {
+      "id": "packaging_epr_eu",
+      "markets": [
+        "EU"
+      ],
+      "when": {},
+      "flag": "Packaging producer responsibility (Regulation (EU) 2025/40, PPWR, applies from 12 Aug 2026): a non-EU seller shipping directly to consumers in an EU country where it is not established must register in that country's producer register and, under Article 45(3), appoint an authorised representative established there, country by country. National systems apply too: Germany LUCID register plus a dual system (VerpackG), France ADEME SYDEREP identifier, Spain MITECO producer register, Netherlands Verpact above 50 tonnes a year, Poland BDO, Italy CONAI. Marketplaces may ask for your registration number before you can sell. Penalties come from national law (e.g. Germany: sales ban and fines).",
+      "severity": "warning",
+      "status": "secondary",
+      "source_url": "https://www.expan.do/post/authorised-representative-epr-obligation-from-12-august-2026",
+      "plain": "If you sell packaged goods to EU consumers you must register your packaging with the country's recycling scheme (non-EU sellers also appoint a local representative). The rules differ by country.",
+      "plain_zh": "向欧盟消费者销售带包装的商品，需要在该国的包装回收体系登记（非欧盟卖家还要指定当地代表），各国规则不同。"
+    }
+  ]
+}

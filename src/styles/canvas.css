@@ -1,0 +1,137 @@
+/* ATELIER INFINITE CANVAS (Concept 3) */
+.atelier-canvas {
+  background: var(--cream);
+  padding-bottom: clamp(64px, 8vw, 120px);
+}
+
+.canvas-viewport {
+  position: relative;
+  width: calc(100% - var(--gutter) * 2);
+  max-width: var(--container-max);
+  height: 86svh;
+  min-height: 600px;
+  margin-inline: auto;
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 15, 0.18);
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.canvas-viewport:active {
+  cursor: grabbing;
+}
+
+.canvas-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(20, 17, 15, 0.24) 1.25px, transparent 0);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+.canvas-world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.canvas-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 280px;
+  background: var(--cream);
+  border: 1px solid rgba(20, 17, 15, 0.16);
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(20, 17, 15, 0.08);
+  will-change: transform;
+}
+
+.canvas-card--note {
+  width: 220px;
+  background: var(--vermilion);
+  color: var(--cream);
+}
+
+.canvas-card--gold {
+  width: 230px;
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.canvas-card__meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  opacity: 0.75;
+}
+
+.canvas-collaborators {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.collab-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  will-change: transform;
+}
+
+.collab-cursor__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 99px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--cream);
+  background: var(--ink);
+}
+
+.canvas-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.canvas-minimap {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 116px;
+  height: 78px;
+  z-index: 6;
+  border: 1px solid rgba(20, 17, 15, 0.2);
+}
+
+.canvas-minimap__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vermilion);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

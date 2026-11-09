@@ -1,0 +1,111 @@
+/* FOOTER */
+.site-footer {
+  background: var(--night);
+  color: var(--cream);
+  position: relative;
+  z-index: var(--z-curtain);
+  overflow: hidden;
+}
+
+.footer__main {
+  padding-top: 72px;
+  padding-bottom: 40px;
+}
+
+.footer__top {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 48px;
+  margin-bottom: 64px;
+}
+
+.footer__motto {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+
+.footer__tagline {
+  color: rgba(243, 237, 224, 0.72);
+  max-width: 38ch;
+}
+
+.footer__mirror {
+  margin-top: 24px;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.4rem;
+  color: var(--gold);
+  transform: scaleX(-1);
+  opacity: 0.75;
+}
+
+.footer__cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: rgba(243, 237, 224, 0.78);
+}
+
+.footer__col-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.footer__wordmark {
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 21vw, 20rem);
+  line-height: 0.78;
+  letter-spacing: -0.04em;
+  color: var(--cream);
+  overflow: hidden;
+  padding-top: 16px;
+  border-top: 1px solid rgba(201, 162, 75, 0.2);
+  user-select: none;
+}
+
+.footer__wordmark span {
+  display: inline-block;
+  transition: transform 0.45s var(--ease-medici), color 0.35s ease;
+}
+
+.footer__wordmark span:hover {
+  transform: translateY(-14px);
+  color: var(--vermilion);
+}
+
+.footer__bottom {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.footer__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}

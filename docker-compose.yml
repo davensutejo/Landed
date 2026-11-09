@@ -1,0 +1,12 @@
+# One container: the built site and the API. Accounts persist in the named volume.
+services:
+  landed:
+    build: .
+    restart: unless-stopped
+    env_file: .env          # LLM_API_KEY, LLM_BASE_URL, LLM_MODEL (never baked into the image)
+    volumes:
+      - landed-db:/app/db
+    ports:
+      - "80:8000"           # with a domain, put Caddy in front for HTTPS (see DEPLOY.md)
+volumes:
+  landed-db

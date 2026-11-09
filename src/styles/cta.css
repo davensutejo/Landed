@@ -1,0 +1,70 @@
+/* FINAL CTA (Concept 6) */
+.cta {
+  position: relative;
+  min-height: 85svh;
+  display: grid;
+  place-items: center;
+  overflow: clip;
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--monet-haze), var(--monet-peri), var(--monet-sage), var(--monet-rose));
+}
+
+.cta__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.cta__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(250, 246, 236, 0.55) 0%, rgba(243, 237, 224, 0.25) 65%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cta__container {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.cta__form {
+  width: 100%;
+  max-width: 540px;
+  margin-top: 12px;
+}
+
+.cta__input-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.cta__input {
+  flex: 1;
+  min-height: 52px;
+  padding: 12px 22px;
+  color: var(--ink);
+  background: rgba(250, 246, 236, 0.72);
+}
+
+.cta__input::placeholder {
+  color: rgba(20, 17, 15, 0.55);
+}
+
+.cta__feedback {
+  margin-top: 12px;
+  min-height: 24px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>到岸 Landed · 定价工作台</title>
+  <meta name="description" content="到岸 Landed：输入产品成本、重量和目标毛利，得到德国 / 美国的到岸售价、利润风险和上架前必须完成的合规事项。" />
+  <meta name="theme-color" content="#FAF8F4" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2314110F'/%3E%3Cpath d='M22 18 V44 H44' fill='none' stroke='%23F3EDE0' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+</head>
+<body class="lw">
+  <header class="lw-top">
+    <a class="lw-brand" href="/" aria-label="到岸 Landed 首页">
+      <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="currentColor"/><path d="M22 18 V44 H44" fill="none" stroke="var(--bg)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="lw-brand__name">到岸 <span>Landed</span></span>
+    </a>
+    <span class="lw-top__meta" data-i18n="snapshot"></span>
+    <div class="lw-top__actions">
+      <button type="button" class="btn btn--quiet" id="lw-example" data-i18n="example"></button>
+      <button type="button" class="btn btn--quiet lw-icon" id="lw-settings" aria-label="个性化设置"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+      <button type="button" class="btn btn--quiet lw-lang" id="lw-lang" aria-label="Switch language"></button>
+      <button type="button" class="btn lw-account" id="lw-account"></button>
+    </div>
+  </header>
+
+  <nav class="lw-tabs" aria-label="View">
+    <button type="button" class="lw-tab is-on" data-pane="chat" data-i18n="tabChat"></button>
+    <button type="button" class="lw-tab" data-pane="result"><span data-i18n="tabResult"></span><span class="lw-tab__dot" id="tab-dot" hidden></span></button>
+  </nav>
+
+  <main class="lw-main">
+    <!-- CHAT -->
+    <section class="lw-chat is-shown" id="pane-chat" aria-label="对话">
+      <div class="lw-chat__log" id="chat-log" aria-live="polite"></div>
+
+      <form class="lw-chat__form" id="chat-form">
+        <label for="chat-input" class="sr-only" data-i18n="inputLabel"></label>
+        <textarea id="chat-input" rows="1" autocomplete="off"></textarea>
+        <button type="submit" class="send" id="chat-send" aria-label="发送">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H19 M13 6 L19 12 L13 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+      <p class="lw-chat__status" id="chat-status" aria-live="polite"></p>
+    </section>
+
+    <!-- RESULT -->
+    <section class="lw-result" id="pane-result" aria-label="结果">
+      <div class="empty" id="empty">
+        <h1 data-i18n="emptyTitle"></h1>
+        <ol class="empty__steps">
+          <li><b data-i18n="step1T"></b><span data-i18n="step1"></span></li>
+          <li><b data-i18n="step2T"></b><span data-i18n="step2"></span></li>
+          <li><b data-i18n="step3T"></b><span data-i18n="step3"></span></li>
+        </ol>
+        <p class="empty__you" id="empty-you" hidden></p>
+        <p class="empty__note" data-i18n="emptyNote"></p>
+        <button type="button" class="btn btn--primary" data-load-example data-i18n="exampleLong"></button>
+      </div>
+
+      <div class="result" id="result" hidden>
+        <!-- HS (only when the agent classified) -->
+        <section class="panel" id="sec-hs" hidden>
+          <div class="panel__head"><h2 data-i18n="hsTitle"></h2><span class="tag" id="hs-tag"></span></div>
+          <div id="hs-body"></div>
+        </section>
+
+        <!-- Abstain / notice -->
+        <div class="notice" id="notice" hidden></div>
+
+        <!-- Price -->
+        <section class="panel panel--hero" id="sec-price" hidden>
+          <div class="hero">
+            <div class="hero__main">
+              <p class="hero__label" id="price-label"></p>
+              <p class="hero__price" id="price-value"></p>
+              <p class="hero__sub" id="price-sub"></p>
+              <button type="button" class="btn btn--save" id="btn-save" data-p="saveProduct"></button>
+            </div>
+            <dl class="hero__stats" id="price-stats"></dl>
+          </div>
+          <div class="chips" id="price-chips"></div>
+          <div class="tips" id="tips"></div>
+        </section>
+
+        <section class="panel" id="sec-breakdown" hidden>
+          <div class="panel__head"><h2 data-i18n="breakdownTitle"></h2><span class="panel__hint" id="breakdown-hint"></span></div>
+          <div class="stack" id="stack" role="img"></div>
+          <ul class="legend" id="legend"></ul>
+        </section>
+
+        <section class="panel" id="sec-risk" hidden>
+          <div class="panel__head"><h2 data-i18n="riskTitle"></h2><span class="panel__hint" id="risk-hint"></span></div>
+          <ul class="risks" id="risks"></ul>
+          <details class="more">
+            <summary data-i18n="riskMore"></summary>
+            <figure class="fig">
+              <figcaption data-i18n="histCaption"></figcaption>
+              <svg id="chart-hist" class="chart" viewBox="0 0 640 220" role="img"></svg>
+            </figure>
+            <figure class="fig">
+              <figcaption data-i18n="curveCaption"></figcaption>
+              <svg id="chart-curve" class="chart" viewBox="0 0 640 300" role="img"></svg>
+              <p class="curve-readout" id="curve-readout"></p>
+            </figure>
+          </details>
+        </section>
+
+        <section class="panel" id="sec-flags" hidden>
+          <div class="panel__head"><h2 data-i18n="flagsTitle"></h2><span class="panel__hint" id="flags-hint"></span></div>
+          <ul class="flags" id="flags"></ul>
+        </section>
+
+        <section class="panel" id="sec-adjust" hidden>
+          <div class="panel__head"><h2 data-i18n="adjustTitle"></h2><span class="panel__hint" data-i18n="adjustHint"></span></div>
+          <form class="adjust" id="adjust" autocomplete="off"></form>
+          <p class="compare" id="compare"></p>
+        </section>
+
+        <details class="panel panel--plain" id="sec-sources" hidden>
+          <summary><h2 data-i18n="sourcesTitle"></h2><span class="panel__hint" data-i18n="sourcesHint"></span></summary>
+          <table class="sources" id="sources"></table>
+          <h3 class="mini" data-i18n="timelineTitle"></h3>
+          <ol class="timeline" id="timeline"></ol>
+          <div class="row-actions">
+            <button type="button" class="btn btn--quiet" id="lw-export" data-i18n="export"></button>
+            <button type="button" class="btn btn--quiet" id="lw-print" data-i18n="print"></button>
+          </div>
+          <p class="disclaimer" data-i18n="disclaimer"></p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <dialog class="dlg" id="dlg-auth" aria-labelledby="auth-title">
+    <form id="auth-form" method="dialog" class="dlg__body" autocomplete="on">
+      <div class="dlg__head"><h2 id="auth-title" data-p="authTitle"></h2><button type="button" class="btn btn--quiet" data-close aria-label="关闭">×</button></div>
+      <p class="dlg__reason" id="auth-reason" hidden></p>
+      <div class="seg seg--full"><button type="button" data-mode="login" class="is-on" data-p="tabLogin"></button><button type="button" data-mode="register" data-p="tabRegister"></button></div>
+      <label class="field"><span data-p="email"></span><span class="field__box"><input id="auth-email" type="email" autocomplete="email" required maxlength="320" /></span></label>
+      <label class="field"><span data-p="password"></span><span class="field__box"><input id="auth-pw" type="password" required minlength="8" maxlength="200" /></span></label>
+      <label class="check" id="auth-consent-row" hidden><input id="auth-consent" type="checkbox" /><span data-p="consent"></span></label>
+      <p class="dlg__privacy" id="auth-privacy" hidden data-p="privacy"></p>
+      <p class="dlg__err" id="auth-err" role="alert" hidden></p>
+      <button type="submit" class="btn btn--primary btn--block" id="auth-submit"></button>
+    </form>
+  </dialog>
+
+  <dialog class="dlg" id="dlg-account" aria-labelledby="acc-title">
+    <div class="dlg__body">
+      <div class="dlg__head"><h2 id="acc-title" data-p="account"></h2><button type="button" class="btn btn--quiet" data-close aria-label="关闭">×</button></div>
+      <p id="acc-email" class="dlg__reason"></p>
+      <button type="button" class="btn btn--block" id="acc-logout" data-p="logout"></button>
+      <button type="button" class="btn btn--block btn--danger" id="acc-delete" data-p="deleteAcc"></button>
+    </div>
+  </dialog>
+
+
+  <dialog class="dlg" id="dlg-save" aria-labelledby="save-title">
+    <form id="save-form" method="dialog" class="dlg__body">
+      <div class="dlg__head"><h2 id="save-title" data-p="saveTitle"></h2><button type="button" class="btn btn--quiet" data-close aria-label="关闭">×</button></div>
+      <label class="field"><span data-p="saveName"></span><span class="field__box"><input id="save-name" type="text" maxlength="80" required /></span></label>
+      <button type="submit" class="btn btn--primary btn--block" data-p="saveConfirm"></button>
+    </form>
+  </dialog>
+
+  <script type="module" src="/src/agent/main.js"></script>
+</body>
+</html>
