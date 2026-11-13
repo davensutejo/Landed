@@ -139,3 +139,32 @@ def test_saved_fx_rate_only_applies_to_its_own_market():
     de = agent.apply_profile("landed_cost", {"market": "DE"}, profile)
     us = agent.apply_profile("landed_cost", {"market": "US"}, profile)
     assert de["fx"] == 8.1 and "fx" not in us and us["fee_rate"] == 0.1
+
+
+def _req(xff=None, host="10.0.0.1"):
+    headers = {"x-forwarded-for": xff} if xff is not None else {}
+    return NS(headers=headers, client=NS(host=host))
+
+
+def test_client_ip_ignores_spoofable_forwarded_for(monkeypatch):
+    # no proxy in front: the header is the client's own text, so it is ignored
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "0")
+    assert accounts.client_ip(_req("1.2.3.4")) == "10.0.0.1"
+    # one proxy: only the entry it appended counts, whatever the client pre-filled
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "1")
+    assert accounts.client_ip(_req("6.6.6.6, 203.0.113.9")) == "203.0.113.9"
+    assert accounts.client_ip(_req("203.0.113.9")) == "203.0.113.9"
+    assert accounts.client_ip(_req()) == "10.0.0.1"
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "nonsense")
+    assert accounts.client_ip(_req("1.2.3.4")) == "10.0.0.1"
+
+
+def test_rotating_forwarded_for_does_not_bypass_chat_limit(client, monkeypatch):
+    from api import main
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "0")
+    main._hits.clear()
+    for i in range(main.MAX_REQ):
+        main._rate_limit(_req(f"9.9.9.{i}"))
+    with pytest.raises(main.HTTPException):
+        main._rate_limit(_req("9.9.9.250"))
+    main._hits.clear()

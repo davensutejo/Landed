@@ -28,7 +28,7 @@ _hits: dict[str, deque] = defaultdict(deque)
 
 
 def _rate_limit(req: Request) -> None:
-    ip = req.headers.get("x-forwarded-for", req.client.host if req.client else "?").split(",")[0].strip()
+    ip = accounts.client_ip(req)
     q = _hits[ip]
     now = time.time()
     while q and now - q[0] > WINDOW_S:

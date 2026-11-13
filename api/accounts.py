@@ -206,8 +206,27 @@ def _validate_product_data(data: dict) -> str:
 _attempts: dict[str, list[float]] = {}
 
 
+def client_ip(request: Request) -> str:
+    """The caller's IP, for rate limiting.
+
+    X-Forwarded-For is a list the client can pre-fill with anything; each proxy appends the
+    address it saw. Only the entries added by our own proxies are trustworthy, so with
+    TRUSTED_PROXY_HOPS=n we take the n-th entry from the right. With 0 (no proxy in front)
+    the header is ignored and the socket address is used.
+    """
+    socket_ip = request.client.host if request.client else "?"
+    try:
+        hops = int(os.environ.get("TRUSTED_PROXY_HOPS", "0"))
+    except ValueError:
+        hops = 0
+    if hops <= 0:
+        return socket_ip
+    chain = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+    return chain[-hops] if len(chain) >= hops else socket_ip
+
+
 def _throttle(request: Request, limit: int = 30, window: int = 600) -> None:
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "?").split(",")[0].strip()
+    ip = client_ip(request)
     now = time.time()
     hits = [t for t in _attempts.get(ip, []) if now - t < window]
     if len(hits) >= limit:

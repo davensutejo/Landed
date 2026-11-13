@@ -13,7 +13,16 @@ from __future__ import annotations
 import json
 import re
 
-NUM = re.compile(r"(?:€|EUR\s?|\$|USD\s?|¥|CNY\s?)\s?(\d+(?:[.,]\d+)?)|(\d+(?:\.\d+)?)\s?%")
+# A written number: "1.299,00" / "1,299.00" (thousands groups) or "26,37" / "26.37".
+_N = r"\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)?"
+# Money with the symbol before ("€26.37") or after ("26,37 €", the German and French norm), and
+# percentages written with a sign or a word ("19 %", "19 Prozent").
+NUM = re.compile(
+    rf"(?:€|EUR\s?|US\$|\$|USD\s?|¥|CNY\s?)\s?(?P<pre>{_N})"
+    rf"|(?<![\d.,])(?P<suf>{_N})\s?(?:€|EUR\b|euros?\b|Euro\b|USD\b|\$|CNY\b|¥|元|欧元|美元|块)(?!\s?\d)"
+    rf"|(?<![\d.,])(?P<pct>{_N})\s?(?:%|％|(?:Prozent|percent|per cent|pour cent|por ciento|per cento|procent)\b)",
+    re.IGNORECASE,
+)
 
 # Product specs (power, capacity, battery, size). Listings invent these readily; they must
 # come from the seller's own messages.
@@ -99,6 +108,37 @@ def _decimals(raw: str) -> int:
     return len(raw.split(".")[1]) if "." in raw else 0
 
 
+def _readings(raw: str) -> list[str]:
+    """Plausible readings of a written number, normalised to a '.' decimal point.
+
+    "1.299,00" -> 1299.00; "26,37" -> 26.37. With one separator and exactly three digits after
+    it ("1,299" / "1.299") the text is ambiguous between a decimal and a thousands group, so both
+    readings are returned and either may match a sourced value.
+    """
+    if "." in raw and "," in raw:
+        dec = "." if raw.rfind(".") > raw.rfind(",") else ","
+        return [raw.replace("," if dec == "." else ".", "").replace(dec, ".")]
+    sep = "," if "," in raw else "." if "." in raw else None
+    if sep is None:
+        return [raw]
+    parts = raw.split(sep)
+    if len(parts) > 2:
+        return [raw.replace(sep, "")]  # "1.299.000"
+    out = [raw.replace(sep, ".")]
+    if len(parts[1]) == 3:
+        out.append(raw.replace(sep, ""))
+    return out
+
+
+def _matches(raw: str, pool: list[float]) -> bool:
+    for r in _readings(raw):
+        d = min(_decimals(r), 2)
+        v = round(float(r), d)
+        if any(abs(round(a, d) - v) < 1e-9 for a in pool):
+            return True
+    return False
+
+
 def check(answer: str, tool_results: list, user_texts: list[str]) -> list[str]:
     values: list[float] = []
     for src in [*tool_results, *user_texts]:
@@ -107,12 +147,9 @@ def check(answer: str, tool_results: list, user_texts: list[str]) -> list[str]:
 
     unverified = []
     for m in NUM.finditer(answer):
-        is_money = m.group(1) is not None
-        raw = (m.group(1) or m.group(2)).replace(",", ".")
-        d = min(_decimals(raw), 2)
-        v = round(float(raw), d)
-        pool = values if is_money else as_pct
-        if not any(abs(round(a, d) - v) < 1e-9 for a in pool):
+        is_pct = m.group("pct") is not None
+        raw = m.group("pre") or m.group("suf") or m.group("pct")
+        if not _matches(raw, as_pct if is_pct else values):
             unverified.append(m.group(0).strip())
 
     for m in UNIT.finditer(answer):

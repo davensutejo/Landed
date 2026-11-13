@@ -4,6 +4,8 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env          # LLM_API_KEY, LLM_BASE_URL, LLM_MODEL (never baked into the image)
+    environment:
+      TRUSTED_PROXY_HOPS: "0"   # exposed directly; set to "1" when Caddy sits in front (see DEPLOY.md)
     volumes:
       - landed-db:/app/db
     ports:

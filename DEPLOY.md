@@ -13,6 +13,7 @@
 
 HTTPS (optional, needs a domain pointing at the server): run Caddy in front:
     docker run -d --name caddy --network host -v caddy:/data caddy caddy reverse-proxy --from your.domain --to localhost:8000
-and change the compose port to `127.0.0.1:8000:8000`.
+and change the compose port to `127.0.0.1:8000:8000` and `TRUSTED_PROXY_HOPS` to `"1"` (so rate limiting
+sees the visitor's IP that Caddy forwards, not Caddy's own address).
 
 Backups: `docker run --rm -v medici_landed-db:/d -v $PWD:/b alpine tar czf /b/db.tgz -C /d .`

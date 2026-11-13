@@ -131,6 +131,22 @@ def test_guardrail_accepts_rounding_but_not_invention():
     assert guardrail.check("Charge €19.99.", [tool], []) == ["€19.99"]
 
 
+def test_guardrail_reads_european_number_formats():
+    tool = {"price_eur": 26.37, "vat_rate": 0.19, "big": 1299.0}
+    # symbol after the number, comma decimals, percent as a word: sourced -> pass
+    assert guardrail.check("Verkaufspreis: 26,37 € inkl. 19 % MwSt.", [tool], []) == []
+    assert guardrail.check("Preis 26,37 EUR, davon 19 Prozent MwSt.", [tool], []) == []
+    assert guardrail.check("Prix : 1.299,00 € TTC", [tool], []) == []
+    assert guardrail.check("售价 26.37 欧元", [tool], []) == []
+    # the same formats with invented numbers -> flagged
+    assert guardrail.check("Verkaufspreis: 29,99 €", [tool], []) == ["29,99 €"]
+    assert guardrail.check("Zoll 17 Prozent", [tool], []) == ["17 Prozent"]
+    assert guardrail.check("Prix 1.499,00 €", [tool], []) == ["1.499,00 €"]
+    assert guardrail.check("售价 31.50 欧元", [tool], []) == ["31.50 欧元"]
+    # "3 €26" is a count followed by a price, not "3 €"
+    assert guardrail.check("Buy 3 €26.37 items", [tool], []) == []
+
+
 def test_fx_and_volatility_are_sourced_not_demo():
     from landed import data
     for key, market in (("fx_cny_per_eur", "EU"), ("fx_cny_per_usd", "US"), ("fx_horizon_sd", "ALL")):

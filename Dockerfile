@@ -20,5 +20,8 @@ COPY --from=web /app/dist ./dist
 #   docker run -v landed-db:/app/db ...
 RUN mkdir -p /app/db && chmod 777 /app/db
 ENV LANDED_DB=/app/db/landed.sqlite3
+# Railway and Hugging Face Spaces put one proxy in front of the app: trust only the
+# X-Forwarded-For entry it adds (rate limiting). docker-compose overrides this to 0.
+ENV TRUSTED_PROXY_HOPS=1
 EXPOSE 8000
 CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
