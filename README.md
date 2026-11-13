@@ -1,13 +1,3 @@
----
-title: Landed
-emoji: 📦
-colorFrom: yellow
-colorTo: gray
-sdk: docker
-app_port: 8000
-pinned: false
----
-
 # 到岸 Landed — The Landed Price, Sourced.
 
 > **Cross-Border Landed-Cost & Localization Agent**  
