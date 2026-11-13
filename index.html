@@ -334,7 +334,7 @@
                 </svg>
               </div>
               <h3 class="feature-card__title">One question, <em class="ital">not</em> a guess.</h3>
-              <p class="feature-card__desc">When the description fits more than one HS code, the agent asks the one question that best splits the remaining candidates, such as whether the motor is built into the product or sits in a separate base, and shows up to three codes with the reasoning for each. The seller confirms the code before anything is priced.</p>
+              <p class="feature-card__desc">When the description fits more than one HS code, the agent asks the one question that best splits the remaining candidates, such as whether the motor is built into the product or sits in a separate base, and shows up to three codes with the reasoning for each. It only asks where the answer changes the money: for an EU order below €150 the duty is €3 whatever the code, so any product is priced straight away.</p>
             </article>
 
             <!-- Card II -->
@@ -473,7 +473,7 @@
                   </div>
                   <figcaption class="figure-caption">II. Classify: candidates narrowed from a hand-built table of HS headings and chapter notes.</figcaption>
                 </figure>
-                <p class="process-panel__copy">Today this covers five candidate codes around blenders and mixers. If the attributes that decide the code are missing, the agent asks for them, and outside that family it declines instead of guessing. The seller confirms the code before anything is priced.</p>
+                <p class="process-panel__copy">Today this covers five candidate codes around blenders and mixers. It is only consulted where the code changes the money: a German order below €150 is priced for any product without asking. Where the code does matter, such as US duty, the agent asks for the attributes that decide it.</p>
               </article>
 
               <article class="process-panel squircle" data-squircle="40">
@@ -514,7 +514,7 @@
               <span class="eyebrow__text">III. 算例 · A WORKED EXAMPLE</span>
             </div>
             <h2 id="costcard-heading" class="section-title"><span class="zh" lang="zh-CN">一个带电池的搅拌杯，卖到德国。</span>One blender. One <em class="ital">honest</em> price.</h2>
-            <p class="section-lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, same seed, no LLM). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
+            <p class="section-lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, no LLM; its Monte Carlo uses a different random generator and agrees with the backend to within about 0.2%). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
           </div>
 
           <div class="costcard__grid">
@@ -579,7 +579,7 @@
                 <circle class="moat-art__pulse" cx="120" cy="12" r="4" />
               </svg>
               <h3 class="moat-card__title"><span class="zh" lang="zh-CN">只问会改变价格的问题</span>Only questions that change the money</h3>
-              <p>Under the EU’s €3 regime the duty is €3 per <em>kind</em> of item in a parcel, whatever the code. So for a German order below €150 the agent prices any product straight away and never asks about motors or materials; what it watches is how many different kinds of goods share a parcel. The HS question only appears where the code changes money: US duty, orders above €150, and the declaration itself. For those, it stores the attributes the HS legal notes and WCO GRI use to separate neighbouring codes (five codes in the blender family today, built by hand; extending from binding rulings, CBP CROSS and EU BTI, is in build).</p>
+              <p>Under the EU’s €3 regime the duty is €3 per <em>kind</em> of item in a parcel, whatever the code. So for a German order below €150 the agent prices any product straight away and never asks about motors or materials; what it watches is how many different kinds of goods share a parcel. The HS question only appears where the code changes money: US duty and the customs declaration itself. Orders above €150 are not priced, because the exact code’s conventional duty would apply. For those, it stores the attributes the HS legal notes and WCO GRI use to separate neighbouring codes (five codes in the blender family today, built by hand; extending from binding rulings, CBP CROSS and EU BTI, is in build).</p>
             </article>
             <article class="moat-card">
               <div class="moat-card__top"><span class="eyebrow">02 · METHOD</span><span class="build-tag build-tag--built">BUILT</span></div>
@@ -591,7 +591,7 @@
                 <text class="moat-art__label" x="104" y="14">P5</text>
               </svg>
               <h3 class="moat-card__title"><span class="zh" lang="zh-CN">风险定价，而非加法</span>Risk-buffered pricing</h3>
-              <p>Instead of <code>COGS + freight + duty</code>, the engine prices under uncertainty: 95% margin-at-risk, the chance of missing the target, deterministic shocks, and rule-aware tips: a multipack of the same item pays the €3 once (a ¥6 phone case drops from €10.10 to €6.41 per unit as a 2-pack, same margin), while a free gift of a different kind adds €3.</p>
+              <p>Instead of <code>COGS + freight + duty</code>, the engine prices under uncertainty: 95% margin-at-risk, the chance of missing the target, deterministic shocks, and rule-aware tips: a multipack of the same item pays the €3 once (a ¥6, 50 g phone case drops from €9.24 to €5.87 per unit as a 2-pack, same margin), while a free gift of a different kind adds €3.</p>
             </article>
             <article class="moat-card">
               <div class="moat-card__top"><span class="eyebrow">03 · FLYWHEEL</span><span class="build-tag build-tag--roadmap">ROADMAP</span></div>
