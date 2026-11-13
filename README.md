@@ -230,9 +230,9 @@ Landed is built as an auditable pricing and compliance copilot: the model talks,
 
 ### 1. Compliance Pre-Checks & Anti-Hallucination Guardrail
 - **Compliance checks:** evaluates product attributes against destination rules:
-  - **EU GPSR & PPWR:** flags the EU-wide packaging producer registration required since August 2026 (`secondary` source).
+  - **EU GPSR & PPWR:** flags the PPWR packaging producer registration (an EU regulation, applied from 12 Aug 2026, but registration is per country, with an authorised representative in each) (`secondary` source).
   - **Batteries:** flags IATA Packing Instruction 967 / UN 3481 for equipment containing lithium-ion cells.
-  - **Food contact & WEEE:** adds declaration requirements for kitchenware and electronics.
+  - **Food contact & WEEE:** a food-contact declaration for kitchenware, and WEEE producer registration (in each destination country) for any electrical product.
 - **Guardrail (`landed/guardrail.py`):**
   - Checks generated listings and explanations in **9 EU listing languages** plus Chinese.
   - Flags money figures and percentages (symbol before or after, e.g. `€26.37` or `26,37 €`), product specs (W, mAh, ml) and certification or property claims (`CE`, `RoHS`, `BPA-free`, `TÜV`…) that appear in neither tool output nor the seller's messages.
@@ -273,7 +273,7 @@ Landed is built as an auditable pricing and compliance copilot: the model talks,
 | `api/main.py` | FastAPI application serving streaming endpoints (`/api/chat`, `/api/calc`, `/api/compliance`) and static UI. |
 | `api/accounts.py` | Persistent session management, SQLite storage, scrypt password hashing, and user profile sync. |
 | `src/` | Interactive landing page, cost waterfall visualizer, and onboarding flow (Vite + GSAP). |
-| `src/lib/engine.js` | Zero-dependency JavaScript port of the Python engine for instant client-side calculations. |
+| `src/lib/engine.js` | Zero-dependency JavaScript port of the engine's price, Monte Carlo and stress logic, with the same refusals (EUR 150 ceiling, unreachable margin). The landing page runs it on the Germany demo product. |
 | `scripts/refresh_fx.py` | Manual refresh of the ECB reference rates and historical volatility in `data/rates.csv` and the `src/` copies. |
 | `tests/` | Unit and integration tests covering the engine, agent loop, guardrails, accounts, and compliance logic. |
 | `eval/` | Eval harness comparing Landed with the same model without tools (36 headline cases, plus wider and realistic-seller suites). |
@@ -312,7 +312,7 @@ Landed vs. the same model (`glm-4.5-air`) without tools, 36 cases, one run each:
 | **EU, parcel above €150** | **Not priced.** Conventional duty depends on the exact code and is not loaded for every line, so the agent explains the threshold and abstains. |
 | **United States** | **Indicative lower bound only.** A likely HS line is assumed from the product wording (base duty from the USITC schedule) and the verified 12.5% China Section 301 duty is added. The older Section 301 list duty (7.5% or 25%) is not loaded because sources disagree, so US prices are labelled as a floor. |
 | **Other markets** | **Not supported.** The agent says so instead of guessing. |
-| **Compliance** | EU-wide PPWR packaging registration, GPSR, WEEE, food contact and lithium battery (UN 3481) flags. These are pre-checks, not legal advice. |
+| **Compliance** | PPWR packaging registration (per country), GPSR, WEEE, food contact and lithium battery (UN 3481) flags. These are pre-checks, not legal advice. |
 | **Platform fees** | Sourced commissions for major marketplaces, mostly `secondary` (third-party summaries). An unknown platform gets a flagged 15% placeholder, and a fee the seller types always wins. FBA, ads and payment fees are not modelled. |
 | **Listings** | Drafts in the destination country's language, checked by the guardrail. The seller should review them before publishing. |
 

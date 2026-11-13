@@ -130,11 +130,12 @@ def test_flat_duty_does_not_scale_with_goods():
 def test_regime_switch_at_150():
     cheap = run(market="DE", cogs_cny=100, weight_kg=1)
     assert cheap["waterfall"]["price"] < 150
-    with pytest.raises(data.MissingRate):
-        run(market="DE", cogs_cny=900, weight_kg=2)             # above 150, no code: refuse
-    big = run(market="DE", cogs_cny=900, weight_kg=2, hs_code="8509.40")
-    assert big["waterfall"]["price"] > 150
-    assert any("conventional" in w for w in big["warnings"])
+    # above 150 the engine refuses, with or without an HS code, in calc and in the risk sweep
+    for hs in (None, "8509.40"):
+        with pytest.raises(data.MissingRate):
+            run(market="DE", cogs_cny=900, weight_kg=2, hs_code=hs)
+        with pytest.raises(data.MissingRate):
+            engine.sweep(Inputs(market="DE", cogs_cny=900, weight_kg=2, hs_code=hs, paths=200))
 
 
 def test_unreachable_margin_is_an_error_not_a_number():

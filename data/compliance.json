@@ -53,7 +53,7 @@
         "EU"
       ],
       "when": {
-        "battery_builtin": true
+        "electrical": true
       },
       "flag": "Electrical equipment and batteries: distance sellers must register as a producer in EACH EU country they sell to, with an authorised representative there. Registers differ by country (Germany: stiftung ear for WEEE and batteries, plus a battery take-back scheme; France: ADEME SYDEREP). Battery rules under Regulation (EU) 2023/1542 apply from 18 Aug 2025. Other countries have their own registers: check the one for your destination.",
       "severity": "warning",

@@ -13,8 +13,9 @@ def flags(market: str, attributes: dict) -> dict:
     if region is None:
         return {"market": market, "flags": [], "status": "out_of_scope"}
     attributes = dict(attributes)
-    if attributes.get("has_electric_motor"):
-        attributes.setdefault("electrical", True)  # the CE / FCC rules are about any electrical product
+    if attributes.get("has_electric_motor") or attributes.get("battery_builtin"):
+        # CE / FCC / WEEE are about any electrical product, and a built-in battery makes it one
+        attributes.setdefault("electrical", True)
     rules = data.compliance_rules()
     out = []
     for rule in rules["rules"]:

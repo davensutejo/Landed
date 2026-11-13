@@ -73,7 +73,6 @@ class Params:
     duty_mode: str  # "eu_flat" | "ad_valorem"
     duty_flat: float = 0.0
     duty_rate: float = 0.0
-    duty_rate_known: bool = False
     us_list_known: bool = False
     fee_fixed: float = 0.0  # per-order platform fee in the destination currency
     fee_high: float | None = None
@@ -202,18 +201,9 @@ def build_params(x: Inputs) -> Params:
         _prov(prov, flat, "EU flat duty per tariff category")
         p.duty_mode = "eu_flat"
         p.duty_flat = flat.value * x.item_categories
-        # sanity: the flat regime only applies to consignments <= EUR 150
+        # the flat regime only applies to consignments <= EUR 150; above it the engine abstains
         p.flat_threshold = threshold.value
-        # ad-valorem rate kept for the > EUR 150 fallback
-        if x.hs_code:
-            try:
-                dr = data.rate(f"duty_{x.hs_code}", "EU")
-                p.duty_rate = dr.value
-                p.duty_rate_known = True
-                _prov(prov, dr, f"EU conventional duty {x.hs_code} (above EUR 150 only)")
-            except data.MissingRate:
-                pass
-        else:
+        if not x.hs_code:
             warnings.append(
                 "No HS code given. That does not change this price: under the EU flat regime the duty is EUR 3 per "
                 "tariff category whatever the code. The customs declaration still needs a 6-digit HS code."
@@ -366,26 +356,23 @@ def stress(p: Params, price: float) -> list[dict]:
     return [{"scenario": s, "margin_pct": round(margin(q), 4)} for s, q in rows]
 
 
+def _check_flat_ceiling(p: Params, price: float) -> None:
+    """EU prices are given only under the flat EUR 3 regime. Above EUR 150 the conventional duty of
+    the exact tariff code applies instead, which is not loaded for every line, so abstain."""
+    if p.duty_mode == "eu_flat" and price > p.flat_threshold:
+        raise data.MissingRate(
+            f"The price would be about EUR {price:.0f}, above the EUR {p.flat_threshold:.0f} ceiling of the flat "
+            "EUR 3 duty. Above it the conventional duty of the exact tariff code applies, which Landed does not "
+            "price. Ask a customs broker for the duty of the exact code."
+        )
+
+
 def landed_cost(x: Inputs) -> dict:
     """Full result for one SKU. Raises MissingRate/EngineError instead of guessing."""
     p = build_params(x)
     wf = waterfall(p)
     price = wf.pop("_price_exact")
-    if p.duty_mode == "eu_flat" and price > p.flat_threshold:
-        # Above EUR 150 the flat regime does not apply: the conventional rate of the exact code does.
-        if not p.duty_rate_known:
-            raise data.MissingRate(
-                f"The price would be about EUR {price:.0f}, above the EUR {p.flat_threshold:.0f} ceiling of the flat "
-                "EUR 3 duty, so the conventional duty of the exact tariff code applies and it is not in the "
-                "verified tables" + (f" for {x.hs_code}" if x.hs_code else " (no HS code given)") + "."
-            )
-        p.duty_mode = "ad_valorem"
-        wf = waterfall(p)
-        price = wf.pop("_price_exact")
-        p.warnings.append(
-            f"Above the EUR {p.flat_threshold:.0f} flat-duty ceiling, so the conventional {p.duty_rate:.1%} duty for "
-            f"{x.hs_code} applies instead of EUR 3 per category (customs value approximated by the goods cost)."
-        )
+    _check_flat_ceiling(p, price)
     us_scen = None
     if x.market == "US" and not p.us_list_known:
         # the list duty of this line is not loaded: show the price under each rate it could carry
@@ -458,6 +445,7 @@ def sweep(x: Inputs, n: int = 61, lo: float = 0.9, hi: float = 1.15) -> dict:
     expected margin, using one shared set of Monte Carlo draws (common random numbers)."""
     p = build_params(x)
     base = waterfall(p)["_price_exact"]
+    _check_flat_ceiling(p, base)
     prices = np.linspace(base * lo, base * hi, n)
     rng = np.random.default_rng(x.seed)
     fx = p.fx_mean * (1 + p.fx_sd * rng.standard_normal(x.paths))

@@ -105,6 +105,12 @@ def test_compliance_flags_battery_and_bundle():
     assert f["flags"][0]["severity"] == "blocker"
 
 
+def test_weee_applies_to_any_electrical_product():
+    for attrs in ({"electrical": True}, {"has_electric_motor": True}, {"battery_builtin": True}):
+        assert "weee_battery_eu" in {x["id"] for x in compliance.flags("DE", attrs)["flags"]}, attrs
+    assert "weee_battery_eu" not in {x["id"] for x in compliance.flags("DE", {"textile": True})["flags"]}
+
+
 def test_guardrail_flags_invented_numbers():
     tool = engine.landed_cost(engine.Inputs(**DEMO, item_categories=2))
     ok = guardrail.check("Charge €33.12 for a 25% margin.", [tool], ["¥38, 0.6 kg"])

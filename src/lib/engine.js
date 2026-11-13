@@ -56,9 +56,18 @@ function quantile(sorted, q) {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
 }
 
+// Same refusals as the Python engine: never return a number it cannot stand behind.
+export class EngineError extends Error {}
+
 function denom(p) {
-  return 1 / (1 + p.vat) - p.feeRate - p.targetMargin / (1 + p.vat);
+  if (!(p.targetMargin > 0 && p.targetMargin < 0.8)) throw new EngineError('target margin must be between 0 and 0.8');
+  const d = 1 / (1 + p.vat) - p.feeRate - p.targetMargin / (1 + p.vat);
+  if (d <= 0) throw new EngineError('Target margin is unreachable with these fee and VAT rates');
+  return d;
 }
+
+const feeFixed = (p) => p.feeFixed ?? 0;           // per-order platform fee, EUR
+const flatThreshold = (p) => p.flatThreshold ?? 150; // EU flat EUR 3 regime ceiling
 
 // Deterministic point estimate (mean FX, mean return rate).
 export function waterfall(p, { categories }) {
@@ -69,10 +78,14 @@ export function waterfall(p, { categories }) {
   const duty = p.eu3PerCategory * categories;
   const G = cogs + freight + duty;
   const returns = r * G;
-  const price = (G + returns) / denom(p);
+  const price = (G + returns + feeFixed(p)) / denom(p);
+  if (price > flatThreshold(p)) {
+    // Above EUR 150 the conventional duty of the exact code applies; like the backend, abstain.
+    throw new EngineError(`The price would be about EUR ${Math.round(price)}, above the EUR ${flatThreshold(p)} ceiling of the flat EUR 3 duty`);
+  }
   const net = price / (1 + p.vat);
   const vat = price - net;
-  const fee = p.feeRate * price;
+  const fee = p.feeRate * price + feeFixed(p);
   const margin = net - fee - G - returns;
   return {
     price,
@@ -84,7 +97,7 @@ export function waterfall(p, { categories }) {
       { key: 'duty', label: `EU €3 × ${categories}`, value: duty, src: 'eu3' },
       { key: 'returns', label: 'Returns', value: returns, src: 'returns' },
       { key: 'fee', label: 'Platform fee', value: fee, src: 'fee' },
-      { key: 'vat', label: 'VAT 19%', value: vat, src: 'deVat' },
+      { key: 'vat', label: `VAT ${+(p.vat * 100).toFixed(1)}%`, value: vat, src: 'deVat' },
       { key: 'margin', label: 'Margin', value: margin, src: null }
     ]
   };
@@ -98,7 +111,7 @@ export function simulate(p, { categories, price }) {
   const margins = new Float64Array(n);
   const required = new Float64Array(n);
   const net = price / (1 + p.vat);
-  const fee = p.feeRate * price;
+  const fee = p.feeRate * price + feeFixed(p);
   const D = denom(p);
   let losses = 0;
   for (let i = 0; i < n; i++) {
@@ -107,7 +120,7 @@ export function simulate(p, { categories, price }) {
     const G = (p.cogsCny + p.freightCnyPerKg * p.weightKg) / fx + p.eu3PerCategory * categories;
     const profit = net - fee - G * (1 + r);
     margins[i] = profit / net;
-    required[i] = (G * (1 + r)) / D;
+    required[i] = (G * (1 + r) + feeFixed(p)) / D;
     if (profit < 0) losses++;
   }
   margins.sort();
@@ -128,12 +141,15 @@ export function stress(p, { categories, price }) {
     const net = price / (1 + q.vat);
     const r = q.returnAlpha / (q.returnAlpha + q.returnBeta);
     const G = (q.cogsCny + q.freightCnyPerKg * q.weightKg) / q.fxMean + q.eu3PerCategory * categories;
-    return (net - q.feeRate * price - G * (1 + r)) / net;
+    return (net - q.feeRate * price - feeFixed(q) - G * (1 + r)) / net;
   };
+  const baseRet = p.returnAlpha / (p.returnAlpha + p.returnBeta);
+  const stressRet = Math.max(0.15, baseRet + 0.1);
   return [
     { label: 'Base case', m: margin(p) },
-    { label: 'CNY +5% vs EUR', m: margin({ ...p, fxMean: p.fxMean * 0.95 }) },
-    { label: 'Return rate 15%', m: margin({ ...p, returnAlpha: 15, returnBeta: 85 }) },
-    { label: 'Freight +30% (peak)', m: margin({ ...p, freightCnyPerKg: p.freightCnyPerKg * 1.3 }) }
+    { label: 'CNY +5% vs destination currency', m: margin({ ...p, fxMean: p.fxMean * 0.95 }) },
+    { label: `Return rate ${Math.round(stressRet * 100)}%`, m: margin({ ...p, returnAlpha: 100 * stressRet, returnBeta: 100 * (1 - stressRet) }) },
+    { label: 'Freight +30% (peak season)', m: margin({ ...p, freightCnyPerKg: p.freightCnyPerKg * 1.3 }) },
+    { label: 'Add a different kind of item, e.g. a free gift (+EUR 3 duty)', m: margin({ ...p, eu3PerCategory: p.eu3PerCategory + 3 / categories }) }
   ];
 }
