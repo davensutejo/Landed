@@ -72,7 +72,7 @@ export function initPreloader() {
     complete(onHeroStart) {
       return new Promise((resolve) => {
         const elapsed = performance.now() - startTime;
-        const wait = Math.max(0, 1800 - elapsed);
+        const wait = Math.max(0, 300 - elapsed); // just long enough not to flash
         let heroTriggered = false;
 
         // Safety net: if rAF is throttled (background tab, headless capture),
@@ -83,7 +83,7 @@ export function initPreloader() {
           heroTriggered = true;
           root.remove();
           resolve();
-        }, wait + 2500);
+        }, wait + 1500);
 
         setTimeout(() => {
           updateVisuals(1);
@@ -92,12 +92,12 @@ export function initPreloader() {
           gsap.to(allDomCells, {
             scale: 0,
             opacity: 0,
-            duration: 0.85,
+            duration: 0.45,
             ease: 'medici',
             stagger: {
               grid: [rows, cols],
               from: 'center',
-              amount: 0.55
+              amount: 0.25
             },
             onUpdate() {
               if (!heroTriggered && this.progress() >= 0.7) {
@@ -108,7 +108,7 @@ export function initPreloader() {
             onComplete: () => {
               gsap.to(root, {
                 opacity: 0,
-                duration: 0.35,
+                duration: 0.2,
                 onComplete: () => {
                   root.remove();
                   resolve();

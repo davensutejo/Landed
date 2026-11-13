@@ -54,7 +54,7 @@
       <div class="preloader__hud">
         <div class="preloader__left">
           <span class="preloader__counter" id="preloader-counter">0000</span>
-          <span class="preloader__label">LOADING TARIFF TABLES</span>
+          <span class="preloader__label">LOADING</span>
         </div>
         <div class="preloader__right" data-config="YEAR_ROMAN">MMXXVI</div>
       </div>
@@ -72,8 +72,8 @@
 
       <nav class="header-nav" aria-label="Primary Navigation">
         <a href="#showreel" class="header-nav__link"><span>I.</span> <em>痛点</em></a>
-        <a href="#process" class="header-nav__link"><span>II.</span> <em>方法</em></a>
-        <a href="#costcard" class="header-nav__link"><span>III.</span> <em>算例</em></a>
+        <a href="#costcard" class="header-nav__link"><span>II.</span> <em>算例</em></a>
+        <a href="#process" class="header-nav__link"><span>III.</span> <em>方法</em></a>
         <a href="#moat" class="header-nav__link"><span>IV.</span> <em>壁垒</em></a>
       </nav>
 
@@ -91,8 +91,8 @@
     <div id="mobile-menu-sheet" class="mobile-sheet liquid-glass squircle" data-squircle="24" hidden>
       <nav class="mobile-sheet__nav" aria-label="Mobile Navigation">
         <a href="#showreel" class="mobile-sheet__link">I. 痛点 The chaos</a>
-        <a href="#process" class="mobile-sheet__link">II. 方法 Method</a>
-        <a href="#costcard" class="mobile-sheet__link">III. 算例 Cost card</a>
+        <a href="#costcard" class="mobile-sheet__link">II. 算例 Cost card</a>
+        <a href="#process" class="mobile-sheet__link">III. 方法 Method</a>
         <a href="#moat" class="mobile-sheet__link">IV. 壁垒 Moat</a>
       </nav>
       <div class="mobile-sheet__meta">
@@ -287,7 +287,7 @@
 
           <div class="manifesto__body" id="manifesto-stage">
             <!-- Screen reader & fallback paragraph -->
-            <p class="manifesto__sr-text" id="manifesto-source">Language models are good at language and bad at arithmetic they cannot check. On a benchmark of 200 binding U.S. customs rulings, the best frontier reasoning model picked the exact ten-digit tariff code one time in four. Consultants using AI on a task outside its frontier were nineteen points less likely to be right. So Landed splits the work. The model reads the messy product description, decides which tool to call, asks the one clarifying question that settles the tariff code, and writes the local-language listing. Every rate, fee and price comes from deterministic code reading a table in which each row names its source where one exists, a status (verified, secondary or assumption) and the date we checked it. If a figure is not in the table, the agent says so instead of inventing one.</p>
+            <p class="manifesto__sr-text" id="manifesto-source">Language models are good at language and bad at arithmetic they cannot check. On a benchmark of 200 binding U.S. customs rulings, the best frontier reasoning model picked the exact ten-digit tariff code one time in four. Consultants using AI on a task outside its frontier were nineteen points less likely to be right. So Landed splits the work. The model reads the messy product description, decides which tool to call, asks for what is missing (and, only where the code changes the price, the one question that settles it), and writes the local-language listing. Every rate, fee and price comes from deterministic code reading a table in which each row names its source where one exists, a status (verified, secondary or assumption) and the date we checked it. If a figure is not in the table, the agent says so instead of inventing one.</p>
 
             <!-- Draggable dithered cameo -->
             <div class="manifesto__cameo squircle" id="manifesto-cameo" data-squircle="64" data-cursor="DRAG" aria-hidden="true">
@@ -301,91 +301,57 @@
         </div>
       </section>
 
-      <!-- THREE INSTRUMENTS (Concept 16) -->
-      <section id="features" class="section features" aria-labelledby="features-heading" data-concept="16-three-icon-cards">
+      <!-- COST & RISK CARD (live, computed in-browser by src/lib/engine.js) -->
+      <section id="costcard" class="section costcard" aria-labelledby="costcard-heading">
         <div class="container">
           <div class="section-header">
             <span class="folio-tag" aria-hidden="true">II.</span>
             <div class="eyebrow">
-              <span class="eyebrow__text">II. 设计 · THREE DESIGN MOVES</span>
+              <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
+              <span class="eyebrow__text">II. 算例 · A WORKED EXAMPLE</span>
             </div>
-            <h2 id="features-heading" class="section-title"><span class="zh" lang="zh-CN">会追问，会计算，会举证。</span>Ask. Compute. <em class="ital">Cite</em>.</h2>
+            <h2 id="costcard-heading" class="section-title"><span class="zh" lang="zh-CN">一个带电池的搅拌杯，卖到德国。</span>One blender. One <em class="ital">honest</em> price.</h2>
+            <p class="section-lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, no LLM; its Monte Carlo uses a different random generator and agrees with the backend to within about 0.2%). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
           </div>
 
-          <div class="features__row" id="features-row">
-            <!-- Card I -->
-            <article class="feature-card squircle" data-squircle="40" data-concept="19-squircles">
-              <div class="feature-card__double-rule" aria-hidden="true"></div>
-              <svg class="fleuron fleuron--tl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--tr" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--bl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--br" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <div class="feature-card__top">
-                <span class="eyebrow">I · ASK, DON’T GUESS</span>
-                <svg class="icon-sparkle feature-card__twinkle" width="14" height="14" aria-hidden="true"><use href="#sparkle"></use></svg>
+          <div class="costcard__grid">
+            <div class="cc-panel">
+              <div class="cc-prompt"><b>&gt;</b> 500ml portable blender, built-in Li-ion battery, + spare Tritan cup · ¥38 · 0.6 kg · <b>DE (EU), 25% target margin</b> · HS 8509.40 (confirmed)</div>
+              <div class="cc-panel__head"><span class="cc-panel__title">Price waterfall · EUR per unit</span><span class="cc-panel__title">deterministic</span></div>
+              <svg id="cc-waterfall" class="cc-svg" viewBox="0 0 640 300" role="img" aria-label="Cost waterfall from COGS to list price"></svg>
+              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Margin at that price · <b data-cc="paths">5,000</b> Monte Carlo paths</span><span class="cc-panel__title">FX ~ N · returns ~ Beta</span></div>
+              <svg id="cc-mc" class="cc-svg" viewBox="0 0 640 180" role="img" aria-label="Distribution of simulated margins"></svg>
+              <div class="cc-sliders">
+                <label class="cc-slider">
+                  <span class="cc-slider__top"><span>CNY strengthens vs EUR</span><output data-cc="fx-out">0.0%</output></span>
+                  <input type="range" id="cc-fx" min="0" max="10" step="0.5" value="0" />
+                </label>
+                <label class="cc-slider">
+                  <span class="cc-slider__top"><span>Mean return rate</span><output data-cc="ret-out">8%</output></span>
+                  <input type="range" id="cc-ret" min="2" max="25" step="1" value="8" />
+                </label>
+                <button type="button" class="cc-reset" id="cc-reset">Reset</button>
               </div>
-              <div class="feature-card__icon-wrap">
-                <canvas class="feature-card__dither-glow" width="96" height="96" aria-hidden="true"></canvas>
-                <svg class="feature-card__icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                  <!-- speech bubble with a question mark: the agent asks -->
-                  <path class="draw-icon" d="M8 10 H40 A3 3 0 0 1 43 13 V30 A3 3 0 0 1 40 33 H24 L15 41 V33 H8 A3 3 0 0 1 5 30 V13 A3 3 0 0 1 8 10 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                  <path class="draw-icon" d="M20 18 C20 14.5 28 14.5 28 18.5 C28 21.5 24 21.5 24 25" stroke="var(--vermilion)" stroke-width="1.8" stroke-linecap="round" />
-                  <circle class="draw-icon" cx="24" cy="28.6" r="0.9" stroke="var(--vermilion)" stroke-width="1.5" />
-                </svg>
-              </div>
-              <h3 class="feature-card__title">One question, <em class="ital">not</em> a guess.</h3>
-              <p class="feature-card__desc">When the description fits more than one HS code, the agent asks the one question that best splits the remaining candidates, such as whether the motor is built into the product or sits in a separate base, and shows up to three codes with the reasoning for each. It only asks where the answer changes the money: for an EU order below €150 the duty is €3 whatever the code, so any product is priced straight away.</p>
-            </article>
+              <p class="cc-bundle" data-cc="shockNote"></p>
+              <label class="cc-toggle"><input type="checkbox" id="cc-set-toggle" /> Declare blender + cup as one retail set (WCO GRI 3(b))</label>
+              <p class="cc-bundle" data-cc="bundle"></p>
+            </div>
 
-            <!-- Card II -->
-            <article class="feature-card squircle" data-squircle="40">
-              <div class="feature-card__double-rule" aria-hidden="true"></div>
-              <svg class="fleuron fleuron--tl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--tr" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--bl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--br" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <div class="feature-card__top">
-                <span class="eyebrow">II · DETERMINISTIC ENGINE</span>
-                <svg class="icon-sparkle feature-card__twinkle" width="14" height="14" aria-hidden="true"><use href="#sparkle"></use></svg>
+            <div class="cc-panel">
+              <div class="cc-kpis">
+                <div class="cc-kpi cc-kpi--accent"><span class="cc-kpi__num" data-cc="price">—</span><span class="cc-kpi__lbl">Target price, VAT incl.</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="floor">—</span><span class="cc-kpi__lbl">95% risk-buffered price</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="p5">—</span><span class="cc-kpi__lbl">P5 margin (MaR₉₅)</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="pbelow">—</span><span class="cc-kpi__lbl">P(margin &lt; target)</span></div>
               </div>
-              <div class="feature-card__icon-wrap">
-                <canvas class="feature-card__dither-glow" width="96" height="96" aria-hidden="true"></canvas>
-                <svg class="feature-card__icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                  <!-- margin distribution with the P5 line: price with its risk -->
-                  <path class="draw-icon" d="M4 40 H44" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-                  <path class="draw-icon" d="M6 40 C14 40 17 10 24 10 C31 10 34 40 42 40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                  <path class="draw-icon" d="M17 40 V24" stroke="var(--vermilion)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3 2" />
-                  <path class="draw-icon" d="M8 40 C12 40 14 32 16 26 L17 24 V40 Z" stroke="var(--vermilion)" stroke-width="1" />
-                </svg>
-              </div>
-              <h3 class="feature-card__title">A price with its <em class="ital">risk</em> attached.</h3>
-              <p class="feature-card__desc">A cost waterfall computed in code, then 5,000 seeded Monte Carlo paths over FX and return rates. You get the price that holds your target margin in 95% of scenarios, the chance of falling short, and a stress table.</p>
-            </article>
-
-            <!-- Card III -->
-            <article class="feature-card squircle" data-squircle="40">
-              <div class="feature-card__double-rule" aria-hidden="true"></div>
-              <svg class="fleuron fleuron--tl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--tr" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--bl" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <svg class="fleuron fleuron--br" aria-hidden="true"><use href="#fleuron"></use></svg>
-              <div class="feature-card__top">
-                <span class="eyebrow">III · PROVENANCE</span>
-                <svg class="icon-sparkle feature-card__twinkle" width="14" height="14" aria-hidden="true"><use href="#sparkle"></use></svg>
-              </div>
-              <div class="feature-card__icon-wrap">
-                <canvas class="feature-card__dither-glow" width="96" height="96" aria-hidden="true"></canvas>
-                <svg class="feature-card__icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                  <!-- document with source lines and a verified seal -->
-                  <path class="draw-icon" d="M11 5 H30 L38 13 V43 H11 Z M30 5 V13 H38" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                  <path class="draw-icon" d="M16 19 H29 M16 25 H26 M16 31 H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                  <circle class="draw-icon" cx="31" cy="34" r="7" stroke="var(--vermilion)" stroke-width="1.5" />
-                  <path class="draw-icon" d="M27.8 34 L30 36.2 L34.4 31.8" stroke="var(--vermilion)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-              <h3 class="feature-card__title">Every figure, <em class="ital">sourced</em>.</h3>
-              <p class="feature-card__desc">Each number shows its source where one exists, the date we checked it, and whether it is verified, needs re-checking, or is a placeholder assumption the seller replaces. Every tool call behind an answer is shown and logged.</p>
-            </article>
+              <table class="cc-table" aria-label="Stress scenarios: margin at target price">
+                <tbody data-cc="stress"></tbody>
+              </table>
+              <p class="cc-disclaimer">P(net loss) at target price: <strong data-cc="ploss">—</strong></p>
+              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Provenance</span></div>
+              <ul class="cc-provenance" id="cc-provenance"></ul>
+              <p class="cc-disclaimer">Figures marked ASSUMPTION are placeholders that the seller replaces with their own. This is quantitative decision support, not licensed customs brokerage.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -398,7 +364,7 @@
               <span class="folio-tag" aria-hidden="true">III.</span>
               <span class="marginalia" aria-hidden="true">≤ 6 TOOL STEPS</span>
               <div class="eyebrow">
-                <span class="eyebrow__text">II.b 流程 · THE AGENT LOOP</span>
+                <span class="eyebrow__text">III. 方法 · THE AGENT LOOP</span>
               </div>
               <h2 id="process-heading" class="section-title"><span class="zh" lang="zh-CN">从一句描述到一个可审计的价格。</span>From one sentence to an <em class="ital">auditable</em> price.</h2>
             </div>
@@ -499,61 +465,6 @@
                 </figure>
                 <p class="process-panel__copy">Local-language copy, UN 3481 / PI 967 battery handling, food-contact declarations, and a flag when classifying the items as a retail set (GRI 3(b)) could lower the €3-per-category duty.</p>
               </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- COST & RISK CARD (live, computed in-browser by src/lib/engine.js) -->
-      <section id="costcard" class="section costcard" aria-labelledby="costcard-heading">
-        <div class="container">
-          <div class="section-header">
-            <span class="folio-tag" aria-hidden="true">III.</span>
-            <div class="eyebrow">
-              <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
-              <span class="eyebrow__text">III. 算例 · A WORKED EXAMPLE</span>
-            </div>
-            <h2 id="costcard-heading" class="section-title"><span class="zh" lang="zh-CN">一个带电池的搅拌杯，卖到德国。</span>One blender. One <em class="ital">honest</em> price.</h2>
-            <p class="section-lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, no LLM; its Monte Carlo uses a different random generator and agrees with the backend to within about 0.2%). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
-          </div>
-
-          <div class="costcard__grid">
-            <div class="cc-panel">
-              <div class="cc-prompt"><b>&gt;</b> 500ml portable blender, built-in Li-ion battery, + spare Tritan cup · ¥38 · 0.6 kg · <b>DE (EU), 25% target margin</b> · HS 8509.40 (confirmed)</div>
-              <div class="cc-panel__head"><span class="cc-panel__title">Price waterfall · EUR per unit</span><span class="cc-panel__title">deterministic</span></div>
-              <svg id="cc-waterfall" class="cc-svg" viewBox="0 0 640 300" role="img" aria-label="Cost waterfall from COGS to list price"></svg>
-              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Margin at that price · <b data-cc="paths">5,000</b> Monte Carlo paths</span><span class="cc-panel__title">FX ~ N · returns ~ Beta</span></div>
-              <svg id="cc-mc" class="cc-svg" viewBox="0 0 640 180" role="img" aria-label="Distribution of simulated margins"></svg>
-              <div class="cc-sliders">
-                <label class="cc-slider">
-                  <span class="cc-slider__top"><span>CNY strengthens vs EUR</span><output data-cc="fx-out">0.0%</output></span>
-                  <input type="range" id="cc-fx" min="0" max="10" step="0.5" value="0" />
-                </label>
-                <label class="cc-slider">
-                  <span class="cc-slider__top"><span>Mean return rate</span><output data-cc="ret-out">8%</output></span>
-                  <input type="range" id="cc-ret" min="2" max="25" step="1" value="8" />
-                </label>
-                <button type="button" class="cc-reset" id="cc-reset">Reset</button>
-              </div>
-              <p class="cc-bundle" data-cc="shockNote"></p>
-              <label class="cc-toggle"><input type="checkbox" id="cc-set-toggle" /> Declare blender + cup as one retail set (WCO GRI 3(b))</label>
-              <p class="cc-bundle" data-cc="bundle"></p>
-            </div>
-
-            <div class="cc-panel">
-              <div class="cc-kpis">
-                <div class="cc-kpi cc-kpi--accent"><span class="cc-kpi__num" data-cc="price">—</span><span class="cc-kpi__lbl">Target price, VAT incl.</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="floor">—</span><span class="cc-kpi__lbl">95% risk-buffered price</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="p5">—</span><span class="cc-kpi__lbl">P5 margin (MaR₉₅)</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="pbelow">—</span><span class="cc-kpi__lbl">P(margin &lt; target)</span></div>
-              </div>
-              <table class="cc-table" aria-label="Stress scenarios: margin at target price">
-                <tbody data-cc="stress"></tbody>
-              </table>
-              <p class="cc-disclaimer">P(net loss) at target price: <strong data-cc="ploss">—</strong></p>
-              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Provenance</span></div>
-              <ul class="cc-provenance" id="cc-provenance"></ul>
-              <p class="cc-disclaimer">Figures marked ASSUMPTION are placeholders that the seller replaces with their own. This is quantitative decision support, not licensed customs brokerage.</p>
             </div>
           </div>
         </div>

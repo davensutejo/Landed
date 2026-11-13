@@ -14,7 +14,6 @@ import './styles/marquee.css';
 import './styles/showreel.css';
 import './styles/logos.css';
 import './styles/manifesto.css';
-import './styles/features.css';
 import './styles/process.css';
 import './styles/canvas.css';
 import './styles/cta.css';
@@ -124,7 +123,6 @@ async function boot() {
     showreelMod,
     logosMod,
     manifestoMod,
-    featuresMod,
     processMod,
     canvasMod,
     ctaMod,
@@ -139,7 +137,6 @@ async function boot() {
     import('./modules/showreel.js'),
     import('./modules/logos.js'),
     import('./modules/manifesto.js'),
-    import('./modules/features.js'),
     import('./modules/process.js'),
     import('./modules/canvas.js'),
     import('./modules/cta.js'),
@@ -160,7 +157,6 @@ async function boot() {
   showreelMod.initShowreel(onFrame);
   logosMod.initLogos(onFrame);
   await manifestoMod.initManifesto(onFrame);
-  featuresMod.initFeatures();
   processMod.initProcess();
   canvasMod.initCanvas(onFrame);
   ctaMod.initCta(onFrame);
