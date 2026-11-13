@@ -1,14 +1,26 @@
+---
+title: Landed
+emoji: 📦
+colorFrom: yellow
+colorTo: gray
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # 到岸 Landed — The Landed Price, Sourced.
 
 > **Cross-Border Landed-Cost & Localization Agent**  
 > **赛道分类 / Competition Track:** 第二届全国人工智能应用创新大赛 · 出海赛道 (The 2nd National AI Application Innovation Competition — Global Expansion Track)  
-> **Core Value Proposition:** Sourced landed-cost calculation, 95% risk-buffered pricing, automated compliance pre-auditing, and localized listing generation for cross-border e-commerce sellers shipping from China to the EU and US.
+> **Core Value Proposition:** Sourced landed-cost calculation, risk-buffered pricing, compliance pre-checks, and localized listing drafts for cross-border e-commerce sellers shipping from China to the EU (and, indicatively, the US).
+>
+> **Scope today:** EU prices for parcels below €150 in all 27 member states. US prices are an indicative lower bound only. Orders above €150 and markets outside the EU and US get an explanation, not a price. See [Coverage & Scope](#-coverage--scope).
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Vite](https://img.shields.io/badge/Frontend-Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-395%20Passing-brightgreen?style=flat-square)](#test-and-evaluate)
+[![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen?style=flat-square)](#-test-and-evaluate)
 
 ---
 
@@ -16,18 +28,18 @@
 
 > **"Numbers never come from the language model."**
 
-Large language models excel at natural language understanding and multilingual generation, but struggle with deterministic customs arithmetic and non-hallucinated figures. On a benchmark of 200 binding U.S. customs rulings, frontier reasoning models identify the exact 10-digit tariff code only ~25% of the time. 
+Language models are good at understanding a seller's description and writing in many languages. They are unreliable at customs arithmetic and at knowing current rules: in our eval, the same model without tools mentioned the EU's July 2026 €3 flat duty in 0 of 26 answers (see [`eval/RESULTS.md`](eval/RESULTS.md)).
 
-**Landed splits the responsibility cleanly:**
+**Landed splits the responsibility:**
 1. **The LLM** handles conversational intent, parses unstructured product descriptions, selects tools, and writes localized listing copy in the destination language.
-2. **Deterministic Python Code** computes every rate, fee, VAT, currency conversion, duty waterfall, and Monte Carlo risk distribution from officially verified tables.
-3. Every single number displayed carries a **source URL**, a **snapshot date**, and an explicit audit status: `verified`, `secondary`, or `assumption`.
+2. **Deterministic Python code** computes every rate, fee, VAT, currency conversion, duty waterfall, and Monte Carlo risk distribution from sourced tables.
+3. Every number displayed carries a **snapshot date** and an explicit audit status (`verified`, `secondary`, or `assumption`); verified and secondary figures also carry a **source URL**.
 
 ---
 
 ## 🏛 Architecture & Data Flow
 
-User requests flow seamlessly from the reactive frontend, through the FastAPI gateway and agent loop, into deterministic calculation engines, with strict anti-hallucination verification before anything reaches the seller.
+User requests flow from the frontend, through the FastAPI gateway and agent loop, into the deterministic calculation engine. Every answer is checked against tool output before it reaches the seller.
 
 ### Architecture Workflow Diagram
 
@@ -60,7 +72,7 @@ flowchart TD
     subgraph DeterministicCore ["⚙️ Deterministic Calculation & Rules Core"]
         Engine["Tariff & Cost Waterfall Engine (landed/engine.py)\n• EU 27 VAT Rates & €3 Flat Duty Regime (≤ €150)\n• US Section 301 China Tariffs (12.5%)\n• 5,000-Path Monte Carlo Simulation (FX ~ N, Returns ~ Beta)"]:::engine
         HSEntropy["HS Code Disambiguation (landed/hs.py)\n• Min-Expected Entropy Question Selection"]:::engine
-        ECBSync["Multi-Currency Sync (scripts/refresh_fx.py)\n• Daily ECB Reference Rates & 60-Day Volatility"]:::engine
+        ECBSync["FX Snapshot (scripts/refresh_fx.py)\n• ECB Reference Rates & 60-Day Volatility"]:::engine
         ComplianceRules["Compliance Knowledge Base (data/compliance.json)\n• GPSR, PPWR Packaging, WEEE, UN 3481 Batteries"]:::engine
     end
 
@@ -78,7 +90,7 @@ flowchart TD
     ToolDispatch --> Engine
     ToolDispatch --> HSEntropy
     ToolDispatch --> ComplianceRules
-    ECBSync -.->|Daily Updates| Engine
+    ECBSync -.->|Manual Refresh| Engine
 
     Engine --> ToolDispatch
     HSEntropy --> ToolDispatch
@@ -120,7 +132,7 @@ flowchart TD
                                              |
                                              v
 +-----------------------------------------------------------------------------------------+
-|                  4. POST-GENERATION GUARDRAIL (Zero-Hallucination)                      |
+|                  4. POST-GENERATION GUARDRAIL (Anti-Hallucination)                      |
 |  - Scans draft answer across 9 languages for unverified numbers or fake specs           |
 |  - Rejects unverified claims (e.g. "CE-certified", "BPA-free") -> 1-pass auto rewrite   |
 +-----------------------------------------------------------------------------------------+
@@ -222,38 +234,36 @@ Open **[http://localhost:8000](http://localhost:8000)**.
 
 ---
 
-## 🏰 Competitive Moats
+## 🏰 What Makes It Different
 
-Landed is engineered from first principles as an auditable compliance and pricing copilot, fundamentally different from fragile prompt-wrapper chatbots:
+Landed is built as an auditable pricing and compliance copilot: the model talks, the code computes, and every figure can be traced to a source.
 
-### 1. Automated Compliance Pre-Auditing & Zero-Hallucination Guardrail
-- **Proactive Customs Compliance:** Immediately evaluates product attributes against destination regulatory frameworks:
-  - **EU GPSR & PPWR:** Flags EU-wide packaging producer registration obligations required since August 2026.
-  - **Battery & Safety Regulations:** Flags IATA Packing Instruction 967 / UN 3481 for equipment containing lithium-ion cells.
-  - **Food-Contact & WEEE Directives:** Automatically injects declaration requirements for kitchenware and electronics.
-- **Anti-Hallucination Regex & Audit Engine (`landed/guardrail.py`):**
-  - Scans generated listings and explanations across **9 European destination languages**.
-  - Any number, percentage, physical specification (W, mAh, ml), or regulatory certification claim (`CE`, `RoHS`, `BPA-free`, `TÜV`) not present in tool output or user prompt is intercepted.
-  - The agent triggers an **automated one-turn internal rewrite** before invalid claims can reach the seller.
+### 1. Compliance Pre-Checks & Anti-Hallucination Guardrail
+- **Compliance checks:** evaluates product attributes against destination rules:
+  - **EU GPSR & PPWR:** flags the EU-wide packaging producer registration required since August 2026 (`secondary` source).
+  - **Batteries:** flags IATA Packing Instruction 967 / UN 3481 for equipment containing lithium-ion cells.
+  - **Food contact & WEEE:** adds declaration requirements for kitchenware and electronics.
+- **Guardrail (`landed/guardrail.py`):**
+  - Checks generated listings and explanations in **9 EU listing languages** plus Chinese.
+  - Flags money figures and percentages (symbol before or after, e.g. `€26.37` or `26,37 €`), product specs (W, mAh, ml) and certification or property claims (`CE`, `RoHS`, `BPA-free`, `TÜV`…) that appear in neither tool output nor the seller's messages.
+  - On a hit, the agent gets one rewrite pass. Anything still unverified after that is shown to the seller as a warning.
+  - It is a pattern-based check, so it reduces invented claims but cannot catch every paraphrase.
 
-### 2. Multi-Currency Real-Time Synchronization & Empirical Volatility
-- **Daily ECB Reference Rate Ingestion (`scripts/refresh_fx.py`):**
-  - Synchronizes daily reference rates directly from the European Central Bank API for official EUR/CNY and USD/CNY cross-rates.
-- **Empirical 60-Day Volatility Modeling:**
-  - Calculates true standard deviations of log returns over 42 trading days across 2 years of daily historical data.
-  - Feeds a seeded **5,000-path Monte Carlo engine** (NumPy + SciPy) with Gaussian FX distributions and Beta return distributions, computing the exact **95% Margin-at-Risk floor price ($MaR_{95}$)**.
+### 2. Sourced FX & Empirical Volatility
+- **ECB reference rates (`scripts/refresh_fx.py`):** a script you run to pull the official EUR/CNY and USD/CNY (cross) rates from the European Central Bank. The repository ships a dated snapshot, and refreshing is a manual step.
+- **Empirical volatility:** standard deviation of 42-trading-day (≈60 calendar days) log changes in EUR/CNY over two years of ECB history.
+- **Monte Carlo:** a seeded 5,000-path simulation (NumPy + SciPy) with Gaussian FX and Beta-distributed returns gives a **95% margin-at-risk floor price**. It is a simulated estimate under those assumptions, not a guarantee.
 
-### 3. Ultra-Low Latency & High Fault-Tolerant Availability
-- **2–8 Second Conversational Latency:** By turning off token-wasting chain-of-thought overhead (`LLM_THINKING=disabled`) and delegating all math to compiled sub-millisecond Python routines, responses stream with minimal latency.
-- **Automated Fallback Model Routing:** If the primary upstream model experiences rate limits (HTTP 429), out-of-quota errors (HTTP 402), or network timeout spikes, `landed/agent.py` automatically retries the turn on `LLM_FALLBACK_MODEL` seamlessly.
-- **Graceful Degradation:** If all LLM connectivity fails, the deterministic pricing engine and browser-based calculator remain 100% operational.
+### 3. Latency & Fallbacks
+- **Latency:** about 2–8 s per turn on `glm-4.5-air` with thinking disabled. On OpenRouter, eval cases averaged about 9 s (DeepSeek V4.1 Flash) and 12 s (Nemotron). The arithmetic itself is negligible next to the model call.
+- **Fallback model:** if the main model is rate-limited (429), out of credit (402), times out, or returns a 5xx error, `landed/agent.py` retries on `LLM_FALLBACK_MODEL`.
+- **Calculator without chat:** if no model is reachable, the deterministic calculator keeps working, and the chat says so plainly.
 
-### 4. "Ask Only What Changes the Money" (Entropy-Minimized Questioning)
-- Standard LLMs inundate sellers with dozens of classification questions. Landed recognizes legal customs thresholds:
-  - Under the EU's 1 Jul 2026 customs reform, goods below €150 pay a **flat €3 duty per tariff category**, rendering deep HS disambiguation irrelevant for pricing.
-  - Landed asks only for the 4 core economic variables (cost, weight, market, margin) and prices immediately.
-  - Where the code alters duty (e.g., US Section 301 tariffs or orders above €150), `landed/hs.py` selects the single next clarifying question that minimizes candidate entropy.
-  - **Bundle Optimization (WCO GRI 3(b)):** Automatically identifies opportunities where declaring components as a retail set halves customs category fees.
+### 4. "Ask Only What Changes the Money"
+- Under the EU's 1 Jul 2026 customs reform, parcels below €150 pay a **flat €3 duty per kind of item**, whatever the HS code, so the code does not change an EU price below €150.
+  - Landed asks only for the four inputs that do change it (cost, weight, market, margin) and then prices.
+  - Where the code does change duty (US, or orders above €150), `landed/hs.py` picks the single next question that most reduces uncertainty over the candidate codes.
+  - **Bundles (WCO GRI 3(b)):** shows when declaring components as one retail set would cut the number of €3 categories.
 
 ---
 
@@ -261,7 +271,7 @@ Landed is engineered from first principles as an auditable compliance and pricin
 
 | Directory / File | Description |
 |---|---|
-| `data/rates.csv` | Hand-verified rates (duty, VAT, FX, platform fees) with `source_url`, `snapshot_date`, and audit `status`. |
+| `data/rates.csv` | Sourced rates (duty, VAT, FX, platform fees), each with `source_url`, `snapshot_date`, and status (`verified`, `secondary`, `assumption`). |
 | `data/hs_tree.json` | HS classification taxonomy, chapter notes, and discriminating attribute tree. |
 | `data/compliance.json` | Multi-jurisdiction compliance flags (GPSR, PPWR, UN 3481, food contact, WEEE, etc.). |
 | `data/platforms.json` | Sourced referral commissions for major marketplaces across the EU and US. |
@@ -274,18 +284,18 @@ Landed is engineered from first principles as an auditable compliance and pricin
 | `api/accounts.py` | Persistent session management, SQLite storage, scrypt password hashing, and user profile sync. |
 | `src/` | Interactive landing page, cost waterfall visualizer, and onboarding flow (Vite + GSAP). |
 | `src/lib/engine.js` | Zero-dependency JavaScript port of the Python engine for instant client-side calculations. |
-| `scripts/refresh_fx.py` | Automated ECB daily exchange rate synchronization and historical volatility update script. |
-| `tests/` | 395 unit and integration tests covering the engine, agent loop, guardrails, and compliance logic. |
-| `eval/` | Benchmark harness testing Landed vs. unassisted LLM baselines across 36+ real-world seller cases. |
+| `scripts/refresh_fx.py` | Manual refresh of the ECB reference rates and historical volatility in `data/rates.csv` and the `src/` copies. |
+| `tests/` | Unit and integration tests covering the engine, agent loop, guardrails, accounts, and compliance logic. |
+| `eval/` | Eval harness comparing Landed with the same model without tools (36 headline cases, plus wider and realistic-seller suites). |
 
 ---
 
 ## 🧪 Test and Evaluate
 
-Run the comprehensive test suite and evaluation benchmarks:
+Run the test suite and evaluation benchmarks:
 
 ```bash
-# Run 395 unit & integration tests
+# Unit & integration tests
 pytest -q tests
 
 # Run offline price formula closed-form backtest (all 27 EU nations)
@@ -295,18 +305,26 @@ pytest tests/test_backtest.py tests/test_api_backtest.py
 python -m eval.run_eval
 ```
 
-### Benchmark Highlights (`eval/RESULTS.md`):
-- **Pricing Accuracy (26 test cases):** Landed achieved **100% (26/26)** within ±1% of ground truth ($p = 3.0 \times 10^{-8}$ vs baseline 0%).
-- **Margin Erosion Prevented:** Unassisted LLMs underpriced cases by an average of **€11.57/unit**, which would have forced sellers into negative margins on 19 out of 26 products.
-- **Refusal to Hallucinate (10 edge cases):** Correctly declined or requested missing information in 100% of incomplete cases without inventing figures.
+### Eval Highlights ([`eval/RESULTS.md`](eval/RESULTS.md))
+Landed vs. the same model (`glm-4.5-air`) without tools, 36 cases, one run each:
+- **Pricing (26 German cases):** Landed **26/26** within ±1% of the rule-correct price, baseline **0/26** (McNemar p = 3.0 × 10⁻⁸). The rule-correct price comes from Landed's own sourced rules. The eval checks that the seller gets that price, while the unit tests check the rules themselves.
+- **What the baseline cost:** it under-priced every case, by **€11.57/unit** on average, and 19 of 26 of its prices would sell at a loss. The main reason is that it does not know the July 2026 €3 duty rule (mentioned in 0 of 26 answers).
+- **Not guessing (10 cases):** in the paired GLM cases, Landed asked or declined in **8/8** and the baseline in 5/8. That difference is not statistically significant at this n. DeepSeek V4.1 Flash with Landed scored 10/10.
+- **Not yet tested:** a baseline given the same rules in its prompt, and a frontier model without tools. See the caveats in `eval/RESULTS.md`.
 
 ---
 
 ## 🌐 Coverage & Scope
 
-- **European Union (27 Member States):** Verified individual VAT rates for all 27 EU nations; automated application of the July 2026 €3 flat customs duty regime for parcels ≤ €150; EU-wide PPWR packaging registration, GPSR, and WEEE alerts.
-- **United States:** Blender & motor appliance categories with verified 12.5% China Section 301 duties (indicative lower-bound pricing).
-- **Listing Localization:** Generates high-converting listings in the official language of the destination market (German, French, Italian, Spanish, Dutch, Polish, Swedish, etc.).
+| | Status |
+|---|---|
+| **EU, all 27 countries, parcel below €150** | **Priced.** Each country's standard VAT rate (all 27 match the European Commission's table, `verified`) plus the €3 flat duty per kind of item. The headline eval is Germany; the wide backtest covers all 27. |
+| **EU, parcel above €150** | **Not priced.** Conventional duty depends on the exact code and is not loaded for every line, so the agent explains the threshold and abstains. |
+| **United States** | **Indicative lower bound only.** A likely HS line is assumed from the product wording (base duty from the USITC schedule) and the verified 12.5% China Section 301 duty is added. The older Section 301 list duty (7.5% or 25%) is not loaded because sources disagree, so US prices are labelled as a floor. |
+| **Other markets** | **Not supported.** The agent says so instead of guessing. |
+| **Compliance** | EU-wide PPWR packaging registration, GPSR, WEEE, food contact and lithium battery (UN 3481) flags. These are pre-checks, not legal advice. |
+| **Platform fees** | Sourced commissions for major marketplaces, mostly `secondary` (third-party summaries). An unknown platform gets a flagged 15% placeholder, and a fee the seller types always wins. FBA, ads and payment fees are not modelled. |
+| **Listings** | Drafts in the destination country's language, checked by the guardrail. The seller should review them before publishing. |
 
 ---
 
