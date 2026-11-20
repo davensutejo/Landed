@@ -372,6 +372,14 @@ def test_guardrail_labelled_values_come_from_prose_and_key_names_too():
     assert guardrail.check("Hungary VAT is 30%.", [eu], [])
 
 
+def test_guardrail_accepts_a_negative_margin_written_with_a_sign():
+    from landed import guardrail, tools
+    # cheap socks: one more EUR 3 tariff category (a free gift) turns the margin negative
+    res = tools.dispatch("landed_cost", {"market": "DE", "cogs_cny": 12, "weight_kg": 0.25, "target_margin": 0.25})[0]
+    neg = next(s["margin_pct"] for s in res["stress"] if s["margin_pct"] < 0)
+    assert guardrail.check(f"A free gift pushes the margin to −{abs(neg) * 100:.1f}%.", [res], []) == []
+
+
 def test_guardrail_catches_a_stale_duty_in_a_table():
     from landed import guardrail, tools
     us = tools.dispatch("landed_cost", {"market": "US", "hs_code": "8509.40", "cogs_cny": 38, "weight_kg": 0.6,

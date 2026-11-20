@@ -253,7 +253,7 @@ def _labelled_values(sources: list) -> dict[str, dict[str, list[float]]]:
 def check(answer: str, tool_results: list, user_texts: list[str]) -> list[str]:
     values: list[float] = []
     for src in [*tool_results, *user_texts]:
-        values.extend(_raw_numbers(src))
+        values.extend(abs(v) for v in _raw_numbers(src))  # written figures carry no sign: "−7.1%" is read as 7.1
     as_pct = values + [v * 100 for v in values]  # ratios (0.25) may be written as 25%
     labelled = _labelled_values([*tool_results, *user_texts])
 

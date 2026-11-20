@@ -91,9 +91,41 @@ The headline run above used GLM directly. The GLM account later ran out of credi
    - `run-20261108-132140`, `132905`: the first version required a confirmed HS code before any price and scored "asking about the code" as correct. The first run exposed an assumed market/margin (m04) and a German price for a Brazil request (o02); fixed with a code-level input guard.
    - `154455`, `155457`, `161318`: after live testing fixed invented listing claims, the market bypass and US labelling. These runs exposed an out-of-category product receiving the blender question card and the floor price reported as the final answer; both fixed. Pricing 18/18 vs 0/18 in four of the five runs on the old case set, 17/18 in one.
    - **Then the case set changed, deliberately.** Testing as a seller showed the agent asking about motors and heating before pricing products whose German price does not depend on the answer (and declining socks entirely). The €3 rule is per kind of item, not per code, so the agent now prices any German order below €150 without asking about the code, and the five "ambiguous HS" cases became priced cases (with the commercial assumptions added to their prompts so the baseline is treated fairly). Three non-blender products, two above-€150 cases and two US cases were added. `run-20261108-165227` (this report) is the first run on the new set.
-6. Same base model for both systems, so the comparison isolates what the system design adds. A frontier model without tools, or the same model given the rules in its prompt, would be useful further baselines.
+6. Same base model for both systems, so the comparison isolates what the system design adds. The same model given the rules (and the formula) in its prompt is reported below under "Stronger baselines"; against the strongest of those, Landed's pricing lead is **not** significant. A frontier model without tools has not been run.
 
 Reproduce: `python -m eval.build_cases && python -m eval.run_eval`
+
+## Stronger baselines (20 Nov 2026)
+
+**Run:** `eval/results/strong-20261120-212210.json` · `python -m eval.run_strong_baseline` · `deepseek/deepseek-v4.1-flash`, reasoning off, for all four systems · same 36 cases, one run each, scored as above.
+
+The headline baseline mostly shows that the model does not know the July 2026 rule. These runs give the same model, without tools, what it lacks:
+
+- **plain:** the headline baseline, rerun.
+- **rules:** plus a rule sheet generated from `data/rates.csv`, the snapshot the engine reads. It holds the €3-per-category flat duty and its €150 ceiling, all 27 VAT rates, the US rules and listed HS duties, and the instruction to answer ASK when a needed figure is missing.
+- **rules + formula:** plus the engine's closed-form price formula. The formula was checked to reproduce the engine's price on every case with a known answer, so only arithmetic and judgement remain.
+
+| | Landed | plain | rules | rules + formula |
+|---|---|---|---|---|
+| Price within ±1% (26 priced) | **25/26** [81%, 99%] | 0/26 [0%, 13%] | 18/26 [50%, 84%] | 21/26 [62%, 92%] |
+| Median absolute % error | 0.0% | 31.0% | 0.65% | 0.0% |
+| Did not guess (9 must-not-guess) | 9/9 | 4/9 | 7/9 | 9/9 |
+| Priced cases that would sell at a loss | 0 | 8 | 1 | 0 |
+| McNemar exact vs Landed (pricing) | | p = 6.0 × 10⁻⁸ | p = 0.039 | **p = 0.22** |
+| Wilcoxon vs Landed (abs. % error) | | p = 8.2 × 10⁻⁶ | p = 2.8 × 10⁻⁴ | p = 0.13 |
+
+Brackets are 95% Wilson intervals. u02 (US lower bound) is not in either set.
+
+**What this shows**
+
+- **Missing knowledge was most of the gap.** Giving the model the sourced rules takes its median error from 31% to 0.65%. Without them, the model does not know the €3 rule exists.
+- **With the rules alone, arithmetic is what goes wrong.** Seven of the eight misses are small overcharges of 1.0 to 2.6%. The eighth (b03) applied a 20% margin and priced 34% low. The model also gave a price for both above-€150 cases (x01 €426.53, x02 €300.34), although the sheet says the flat duty does not apply there and the exact code's duty is not listed.
+- **With the formula as well, the gap to Landed is not significant at n = 26.** Three misses are arithmetic slips of +1.1% (c02, c04, c06). Two (h02, h03) are over-cautious ASKs where the HS code was unknown. Those two are partly caused by this prompt: its ASK instruction names "an HS code that is unconfirmed", while the rule says the flat duty applies whatever the code.
+- **Landed's one miss is a real defect (h05).** The prompt is in Chinese with the assumptions in English, and the model called `landed_cost` without the seller's stated FX of 8.25 CNY/EUR. The engine therefore used the ECB reference rate of 7.4485 and priced €31.20 instead of €28.83. The input guard checks that the seller stated the cost, but not that the seller's stated overrides were passed.
+
+**Reading it fairly.** A seller can only get the strongest baseline by writing the rule sheet and the formula themselves, from sources that change. That is what Landed packages, along with things this eval does not score: per-figure provenance, the Monte Carlo floor price, compliance flags and the listing guardrail. On the narrow question of "the right price for a stated parcel", a well-prompted model comes close. Landed's measured edge is reliability: no arithmetic slips, and no prices above €150.
+
+Fixed after this run: the guardrail read signed figures ("−7.1%") without their sign and flagged correct negative stress margins. That triggered two rewrites in this run, one of which deleted a correct risk figure. No prices were affected.
 
 ## Wide backtest (9 Nov 2026)
 
