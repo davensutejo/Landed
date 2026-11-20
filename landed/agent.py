@@ -399,6 +399,83 @@ def input_guard(args: dict, seller_texts: list[str]) -> dict | None:
     return None
 
 
+# ---- commercial figures the seller stated: applied in code, like the cost and the margin ----
+# The model once dropped "FX 8.25 CNY per EUR" from a mixed Chinese/English message, and the engine priced
+# at the ECB rate instead (eval h05). Each figure is read from the seller's own words; it is used only when
+# the seller gave exactly one value for it, so "compare a 15% and an 8% fee" stays with the model.
+_N = r"(\d+(?:\.\d+)?)"
+_GAP = r"[^\d\n;；。]{0,24}?"  # a few words, no other number, same clause
+STATED_RX = {
+    "fee_rate": [
+        re.compile(rf"(?:platform fee|marketplace fee|referral fee|commission|selling fee|平台费|平台佣金|佣金|扣点|抽成|手续费){_GAP}{_N}\s*(?:%|％)", re.I),
+        re.compile(rf"{_N}\s*(?:%|％)\s*(?:platform fee|marketplace fee|commission|佣金|平台费|扣点)", re.I),
+    ],
+    "return_rate": [
+        re.compile(rf"(?:return rate|returns?|退货率|退货){_GAP}{_N}\s*(?:%|％)", re.I),
+        re.compile(rf"{_N}\s*(?:%|％)\s*(?:of (?:units|orders|items|sales) (?:are |get |is )?returned|returns?\b|return rate|退货)", re.I),
+    ],
+    "freight_cny_per_kg": [
+        re.compile(rf"(?:freight|shipping|运费|头程|物流费?){_GAP}(?:¥|￥|CNY\s?|RMB\s?)?{_N}\s*(?:元|块|CNY|RMB|yuan)?\s*(?:/|per|每|一)\s*(?:kg|公斤|千克)", re.I),
+        re.compile(rf"(?:运费|头程|物流费?)\s*每(?:公斤|千克|kg)\s*{_N}\s*(?:元|块)", re.I),
+        re.compile(rf"(?:¥|￥){_N}\s*(?:/|per)\s*kg\s*(?:freight|shipping)", re.I),
+    ],
+}
+# FX: CNY per one unit of the destination currency. "FX 8.25 CNY per EUR", "1 EUR = 8.25 CNY", "汇率8.0元/欧元".
+_EUR = r"(?:EUR|euros?|€|欧元)"
+_USD = r"(?:USD|US\$|dollars?|\$|美元)"
+_CNY = r"(?:CNY|RMB|yuan|元|人民币)"
+FX_RX = [
+    re.compile(rf"{_N}\s*{_CNY}\s*(?:/|per|每|兑)\s*(?:1\s*)?(?P<cur>{_EUR}|{_USD})", re.I),
+    re.compile(rf"1\s*(?P<cur>{_EUR}|{_USD})\s*(?:=|≈|兑|换)\s*{_N}\s*{_CNY}?", re.I),
+    re.compile(rf"(?P<cur>{_EUR}|{_USD})\s*/\s*CNY\s*(?:=|:|is|at)?\s*{_N}", re.I),
+    re.compile(rf"(?:FX|exchange rate|汇率){_GAP}{_N}(?!\s*(?:%|％|\.\d))", re.I),  # no currency named: any market
+]
+_RANGES = {"fee_rate": (0, 60), "return_rate": (0, 60), "freight_cny_per_kg": (0.1, 500), "fx": (1, 20)}
+
+
+def stated_overrides(seller_texts: list[str], market: str | None) -> dict:
+    """The fee, return rate, freight per kg and FX the seller wrote, as engine arguments."""
+    text = _DECIMAL_COMMA.sub(r"\1.\2", "\n".join(seller_texts))
+    out: dict = {}
+    for field, rxs in STATED_RX.items():
+        vals = {float(m.group(1)) for rx in rxs for m in rx.finditer(text)}
+        vals = {v for v in vals if _RANGES[field][0] <= v <= _RANGES[field][1]}
+        if len(vals) == 1:
+            v = vals.pop()
+            out[field] = v / 100 if field in ("fee_rate", "return_rate") else v
+    want = "USD" if market == "US" else "EUR"
+    by_cur: dict[str, set[float]] = {"EUR": set(), "USD": set(), None: set()}
+    for rx in FX_RX:
+        for m in rx.finditer(text):
+            v = round(float(next(g for g in m.groups() if g and re.fullmatch(r"\d+(?:\.\d+)?", g))), 4)
+            if not _RANGES["fx"][0] <= v <= _RANGES["fx"][1]:
+                continue
+            cur = m.groupdict().get("cur")
+            by_cur["USD" if cur and re.fullmatch(_USD, cur, re.I) else "EUR" if cur else None].add(v)
+    # A rate written with its currency only counts for that currency's market. "FX 7.10" with no
+    # currency counts only when the seller named no currency for any rate ("FX 7.10 CNY per USD"
+    # also matches the bare pattern and must not price Germany).
+    fx = by_cur[want] if (by_cur["EUR"] or by_cur["USD"]) else by_cur[None]
+    if len(fx) == 1:
+        out["fx"] = fx.pop()
+    return out
+
+
+def apply_stated(name: str, args: dict, seller_texts: list[str]) -> tuple[dict, dict]:
+    """The seller's stated figures win over what the model passed (or left out). Returns (args, changes)."""
+    if name not in PRICING_TOOLS:
+        return args, {}
+    stated = stated_overrides(seller_texts, args.get("market"))
+    changes = {}
+    for k, v in stated.items():
+        cur = args.get(k)
+        if cur is None or not isinstance(cur, (int, float)) or abs(float(cur) - v) > 1e-9:
+            changes[k] = {"model": cur, "seller": v}
+    if not changes:
+        return args, {}
+    return {**args, **{k: c["seller"] for k, c in changes.items()}}, changes
+
+
 # Tools that price with the engine: the same profile defaults, platform rule and input guard apply to all.
 PRICING_TOOLS = ("landed_cost", "price_check", "compare_eu")
 _DECIMAL_COMMA = re.compile(r"(\d),(\d{1,2})(?!\d)")
@@ -538,6 +615,10 @@ def run(history: list[dict], use_tools: bool = True, profile: dict | None = None
             seller_texts = [m["content"] for m in history if m.get("role") == "user"]
             if profile_text(profile):
                 seller_texts = [*seller_texts, profile_text(profile)]
+            # what the seller wrote in this conversation first, then their saved profile for anything left
+            args, corrected = apply_stated(c.function.name, args, [m["content"] for m in history if m.get("role") == "user"])
+            if corrected:
+                trace.setdefault("stated_overrides", []).append(corrected)
             args = apply_profile(c.function.name, args, profile)
             if c.function.name in PRICING_TOOLS:
                 said = platform_in(" ".join(m["content"] for m in history if m.get("role") == "user"))

@@ -546,3 +546,64 @@ def test_compare_eu_display_lists_every_country_with_its_own_vat():
     fi = next(x for x in lines if "Finland" in x)
     se = next(x for x in lines if "Sweden" in x)
     assert "VAT 25.5%" in fi and "VAT 25%" in se and fi.split("profit")[1] != se.split("profit")[1]
+
+
+# --- the seller's stated fee, returns, freight and FX reach the engine (eval h05) ---
+
+def test_stated_overrides_from_every_eval_case():
+    import pathlib
+    keys = ("fee_rate", "return_rate", "freight_cny_per_kg", "fx")
+    root = pathlib.Path(__file__).resolve().parent.parent / "eval"
+    n = 0
+    for f in ("cases.json", "cases_wide.json"):
+        d = json.loads((root / f).read_text(encoding="utf-8"))
+        for c in d["cases"] if isinstance(d, dict) else d:
+            t = c.get("truth")
+            if not t:
+                continue
+            got = agent.stated_overrides([c["prompt"]], t["market"])
+            assert got == {k: t[k] for k in keys if k in t}, c["id"]
+            n += 1
+    assert n >= 90
+
+
+def test_stated_fx_is_only_used_for_its_own_currency():
+    us = "Portable blender, ¥38, 0.6 kg, US, 25%. Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD."
+    assert agent.stated_overrides([us], "US")["fx"] == 7.10
+    assert "fx" not in agent.stated_overrides([us], "DE")
+    assert agent.stated_overrides(["汇率 8.1，运费每公斤40元"], "DE") == {"fx": 8.1, "freight_cny_per_kg": 40}
+    assert agent.stated_overrides(["1 EUR = 7,95 CNY"], "FR") == {"fx": 7.95}
+
+
+def test_two_values_for_one_figure_are_left_to_the_model():
+    got = agent.stated_overrides(["Compare a 15% platform fee with an 8% commission, returns 8%"], "DE")
+    assert "fee_rate" not in got and got["return_rate"] == 0.08
+
+
+def test_target_margin_is_not_read_as_a_fee_or_return_rate():
+    assert agent.stated_overrides(["成本38元，0.6公斤，卖到德国，毛利25%"], "DE") == {}
+    assert agent.stated_overrides(["What price in Germany for a 25% margin?"], "DE") == {}
+
+
+def test_h05_the_dropped_fx_is_put_back(monkeypatch):
+    prompt = ("我卖一个榨汁机，成本45元，0.8公斤，卖到德国，毛利25%，定价多少？ Assume: sold B2C to consumers in Germany "
+              "via IOSS; platform fee 15% of the VAT-inclusive price; freight ¥45/kg; 8% of units are returned and "
+              "written off (their COGS, freight and duty are lost); FX 8.25 CNY per EUR. Margin = profit ÷ revenue excluding VAT.")
+    script = [
+        NS(content="", tool_calls=[_call(1, "landed_cost", {"market": "DE", "cogs_cny": 45, "weight_kg": 0.8, "target_margin": 0.25})]),
+        NS(content="Target price €28.83", tool_calls=None),
+    ]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": prompt}])
+    call = events[0]["args"]
+    assert (call["fx"], call["fee_rate"], call["freight_cny_per_kg"], call["return_rate"]) == (8.25, 0.15, 45, 0.08)
+    assert events[1]["result"]["waterfall"]["price"] == 28.83
+
+
+def test_a_model_value_that_contradicts_the_seller_is_replaced(monkeypatch):
+    script = [
+        NS(content="", tool_calls=[_call(1, "landed_cost", {"market": "DE", "cogs_cny": 38, "weight_kg": 0.6,
+                                                           "target_margin": 0.25, "fx": 7.4485})]),
+        NS(content="ok", tool_calls=None),
+    ]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": "Blender ¥38, 0.6 kg, Germany, 25% margin, FX 8 CNY per EUR"}])
+    assert events[0]["args"]["fx"] == 8

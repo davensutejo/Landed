@@ -125,7 +125,9 @@ Brackets are 95% Wilson intervals. u02 (US lower bound) is not in either set.
 
 **Reading it fairly.** A seller can only get the strongest baseline by writing the rule sheet and the formula themselves, from sources that change. That is what Landed packages, along with things this eval does not score: per-figure provenance, the Monte Carlo floor price, compliance flags and the listing guardrail. On the narrow question of "the right price for a stated parcel", a well-prompted model comes close. Landed's measured edge is reliability: no arithmetic slips, and no prices above €150.
 
-Fixed after this run: the guardrail read signed figures ("−7.1%") without their sign and flagged correct negative stress margins. That triggered two rewrites in this run, one of which deleted a correct risk figure. No prices were affected.
+**Fixed after this run: h05.** The fee, return rate, freight per kg and FX that the seller states are now read from their messages in code, the same way the cost and margin already were. A stated figure is filled in when the model leaves it out, and it replaces a different value the model passes. It is used only when the seller gave exactly one value for that figure, and only for its own currency (a rate "per USD" never prices an EU market). The extraction matches the stated values exactly on all 96 eval prompts with known inputs (`cases.json` and `cases_wide.json`, English and Chinese). Re-running Landed alone on the 36 cases the same evening (DeepSeek V4.1 Flash) gave **26/26 priced and 9/9 did-not-guess**, with h05 at €28.83. The baselines were not re-run, so this does not change the comparison table above.
+
+Also fixed after this run: the guardrail read signed figures ("−7.1%") without their sign and flagged correct negative stress margins. That triggered two rewrites in this run, one of which deleted a correct risk figure. No prices were affected.
 
 ## Wide backtest (9 Nov 2026)
 
