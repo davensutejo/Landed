@@ -155,12 +155,13 @@ export function makeDitheredArt(canvas, seed = 1, paletteName = 'atelier', scale
 
 export function ditherReveal(el, { duration = 0.9 } = {}) {
   const state = { step: 5 };
+  // Opacity only: animating `filter` re-painted every revealing card on every frame, and the canvas
+  // section reveals several at once as it scrolls into view. (Not transform: canvas.js owns it.)
   gsap.fromTo(
     el,
-    { opacity: 0, filter: 'contrast(220%) brightness(1.3)' },
+    { opacity: 0 },
     {
       opacity: 1,
-      filter: 'contrast(100%) brightness(1)',
       duration,
       ease: 'medici',
       onUpdate() {

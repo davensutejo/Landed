@@ -18,8 +18,9 @@ export function initHeader(lenis) {
     }
   });
 
-  const handleScroll = () => {
-    const y = window.scrollY;
+  const handleScroll = (e) => {
+    // Lenis passes its scroll position; reading window.scrollY here forced a layout mid-frame
+    const y = typeof e?.scroll === 'number' ? e.scroll : window.scrollY;
     if (pinnedProcessActive) {
       header.classList.add('is-hidden');
       return;

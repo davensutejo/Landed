@@ -220,7 +220,14 @@ export async function initHero(onFrame) {
     makeDitheredArt(canvas, 2, 'ember', 3);
   }
 
-  // Scroll-scrubbed dither degradation (uCell 2px -> 9px) + Hero Curtain scale/dim
+  // Scroll-scrubbed dither degradation (uCell 2px -> 9px) + Hero Curtain scale/dim.
+  // The dim is a black overlay's opacity, not `filter: brightness()` on the section: a filter on a
+  // full-screen section (with two blur(90px) glows and a WebGL canvas inside) re-painted all of it on
+  // every scroll frame, the worst hitch on the page. Opacity and scale stay on the compositor.
+  const dim = document.createElement('div');
+  dim.className = 'hero__dim';
+  dim.setAttribute('aria-hidden', 'true');
+  section.appendChild(dim);
   ScrollTrigger.create({
     trigger: section,
     start: 'top top',
@@ -229,10 +236,8 @@ export async function initHero(onFrame) {
     onUpdate: (self) => {
       ditherUniforms.uCell.value = 2 + self.progress * 7;
       if (!isReducedMotion()) {
-        gsap.set(section, {
-          scale: 1 - self.progress * 0.06,
-          filter: `brightness(${1 - self.progress * 0.35})`
-        });
+        gsap.set(section, { scale: 1 - self.progress * 0.06 });
+        gsap.set(dim, { opacity: self.progress * 0.35 });
       }
     }
   });

@@ -209,16 +209,39 @@ export function initCanvas(onFrame) {
   });
   io.observe(viewport);
 
+  // The viewport's size, measured when it changes rather than read on every frame (a read after the
+  // previous frame's style writes forced a layout).
+  const rect = { width: viewport.clientWidth, height: viewport.clientHeight };
+  new ResizeObserver(([entry]) => {
+    rect.width = entry.contentRect.width;
+    rect.height = entry.contentRect.height;
+  }).observe(viewport);
+  if (minimapDot) {
+    minimapDot.style.left = '0px';
+    minimapDot.style.top = '0px';
+  }
+  let lastZoom = null;
+  let lastGrid = '';
+  let lastDot = '';
+
   onFrame((time) => {
     if (!state.visible) return;
-    const rect = viewport.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
     const span = getTileSpan();
 
-    world.style.transform = `scale(${state.zoom.toFixed(3)})`;
+    // write only what changed: an unchanged background-position still re-paints the grid
+    const zoom = state.zoom.toFixed(3);
+    if (zoom !== lastZoom) {
+      world.style.transform = `scale(${zoom})`;
+      lastZoom = zoom;
+    }
     if (gridBg) {
-      gridBg.style.backgroundPosition = `${(state.panX * 0.5).toFixed(1)}px ${(state.panY * 0.5).toFixed(1)}px`;
+      const pos = `${(state.panX * 0.5).toFixed(1)}px ${(state.panY * 0.5).toFixed(1)}px`;
+      if (pos !== lastGrid) {
+        gridBg.style.backgroundPosition = pos;
+        lastGrid = pos;
+      }
     }
 
     cardItems.forEach((card) => {
@@ -241,10 +264,14 @@ export function initCanvas(onFrame) {
     });
 
     if (minimapDot) {
+      // transform, not left/top: moving it by left/top re-ran layout every frame
       const mx = gsap.utils.wrap(12, 104, 58 - state.panX * 0.03);
       const my = gsap.utils.wrap(12, 66, 39 - state.panY * 0.03);
-      minimapDot.style.left = `${mx.toFixed(1)}px`;
-      minimapDot.style.top = `${my.toFixed(1)}px`;
+      const dot = `translate(${mx.toFixed(1)}px, ${my.toFixed(1)}px) translate(-50%, -50%)`;
+      if (dot !== lastDot) {
+        minimapDot.style.transform = dot;
+        lastDot = dot;
+      }
     }
   });
 }

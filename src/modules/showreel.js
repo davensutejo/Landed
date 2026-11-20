@@ -18,7 +18,8 @@ export function initShowreel(onFrame) {
   let hudMerged = null;
   const writeHud = () => {
     if (!hud || hudMerged == null) return;
-    hud.textContent = hudMerged >= 8 ? L('8 INPUTS → 1 LANDED PRICE', '8 项输入 → 1 个到岸价') : L(`${hudMerged}/8 INPUTS MERGED`, `已合并 ${hudMerged}/8 项`);
+    const next = hudMerged >= 8 ? L('8 INPUTS → 1 LANDED PRICE', '8 项输入 → 1 个到岸价') : L(`${hudMerged}/8 INPUTS MERGED`, `已合并 ${hudMerged}/8 项`);
+    if (hud.textContent !== next) hud.textContent = next; // a text change dirties layout: skip repeats
   };
   onLang({ apply: writeHud });
   if (!section || !stage || !asciiCanvas || !procCanvas) return;

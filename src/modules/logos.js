@@ -76,10 +76,15 @@ export function initLogos(onFrame) {
     }, 1850);
   }
 
-  // Calm, unhurried single-tile glint every 1.2s
+  // Calm, unhurried single-tile glint every 1.2s, only while the grid is on screen
   if (!isReducedMotion()) {
     let sweepIndex = 0;
+    let gridVisible = false;
+    new IntersectionObserver((entries) => {
+      gridVisible = entries[0]?.isIntersecting ?? false;
+    }).observe(grid);
     setInterval(() => {
+      if (!gridVisible || document.hidden) return;
       flashTile(tiles[sweepIndex % tiles.length]);
       sweepIndex++;
     }, 1200);
@@ -114,6 +119,11 @@ export function initLogos(onFrame) {
       const rim = new THREE.DirectionalLight(0xe8643c, 2.0);
       rim.position.set(-3, -2, 2);
       scene.add(key, rim);
+
+      // Compile the shaders now, behind the preloader. Left to the first visible frame, compiling the
+      // metallic PBR material stalled the scroll as the section came into view.
+      renderer.compile(scene, camera);
+      renderer.render(scene, camera);
 
       onFrame((time) => {
         if (!managed.isVisible()) return;

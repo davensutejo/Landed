@@ -10,6 +10,18 @@
   overflow: clip;
   padding-block: 120px 72px;
   z-index: var(--z-base);
+  will-change: transform; /* the scroll curtain scales it: keep it one composited layer */
+}
+
+/* Scroll curtain dim (hero.js): opacity on the compositor instead of a brightness filter */
+.hero__dim {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  will-change: opacity;
 }
 
 .hero__bg {

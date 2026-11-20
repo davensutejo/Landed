@@ -137,23 +137,33 @@ export async function initManifesto(onFrame) {
     }
   });
 
-  function runPretextLayout() {
-    const maxW = stage.clientWidth || 860;
+  // Stage size, kept current by a ResizeObserver instead of being read on every frame
+  const stageSize = { w: stage.clientWidth || 860, h: stage.clientHeight || 460 };
+  new ResizeObserver(() => {
+    stageSize.w = stage.clientWidth || 860;
+    stageSize.h = stage.clientHeight || 460;
+  }).observe(stage);
+
+  // center: the cameo's centre in stage coordinates when the caller already knows it (the per-frame
+  // drift sets it). Reading it back with getBoundingClientRect right after writing the transform forced
+  // a layout of the page on every frame the section was on screen.
+  function runPretextLayout(center) {
+    const maxW = stageSize.w;
     const { lineHeight, r } = spec;
     const pad = 18;
     const totalR = r + pad;
 
-    // Read actual rendered center of cameo relative to stage so hole & ball match 100%
-    const stageRect = stage.getBoundingClientRect();
-    const cameoRect = cameo.getBoundingClientRect();
-    const cx =
-      stageRect.width > 0
-        ? cameoRect.left - stageRect.left + cameoRect.width * 0.5
-        : cameoState.anchorX + cameoState.offsetX;
-    const cy =
-      stageRect.height > 0
-        ? cameoRect.top - stageRect.top + cameoRect.height * 0.5
-        : cameoState.anchorY + cameoState.offsetY;
+    let cx;
+    let cy;
+    if (center) {
+      ({ x: cx, y: cy } = center);
+    } else {
+      // drag, resize, language switch: rare, so measuring is fine
+      const stageRect = stage.getBoundingClientRect();
+      const cameoRect = cameo.getBoundingClientRect();
+      cx = stageRect.width > 0 ? cameoRect.left - stageRect.left + cameoRect.width * 0.5 : cameoState.anchorX + cameoState.offsetX;
+      cy = stageRect.height > 0 ? cameoRect.top - stageRect.top + cameoRect.height * 0.5 : cameoState.anchorY + cameoState.offsetY;
+    }
 
     let cursor = { segmentIndex: 0, graphemeIndex: 0 };
     let y = 0;
@@ -235,11 +245,15 @@ export async function initManifesto(onFrame) {
     }
   });
 
+  // Draggable must know where the drift left the cameo, but only when a drag starts (capture phase runs
+  // before Draggable's own pointerdown), not on every frame.
+  cameo.addEventListener('pointerdown', () => dragInstance && dragInstance.update(), { capture: true });
+
   onFrame((time) => {
     if (!visible) return;
     if (!cameoState.dragging && !isReducedMotion()) {
-      const maxW = stage.clientWidth || 860;
-      const maxH = stage.clientHeight || 460;
+      const maxW = stageSize.w;
+      const maxH = stageSize.h;
       cameoState.offsetX = Math.sin(time * 0.75) * (maxW * 0.18);
       cameoState.offsetY = Math.cos(time * 0.55) * 68;
 
@@ -258,7 +272,8 @@ export async function initManifesto(onFrame) {
         x: targetX - spec.r,
         y: targetY - spec.r
       });
-      if (dragInstance) dragInstance.update();
+      runPretextLayout({ x: targetX, y: targetY });
+      return;
     }
     runPretextLayout();
   });

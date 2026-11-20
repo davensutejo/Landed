@@ -141,6 +141,9 @@ export function initCta(onFrame) {
       });
 
       scene.add(new THREE.Mesh(triGeo, mat));
+      // Compile behind the preloader instead of on the first frame the section scrolls into view
+      renderer.compile(scene, camera);
+      renderer.render(scene, camera);
 
       section.addEventListener('pointermove', (e) => {
         const rect = section.getBoundingClientRect();
