@@ -97,6 +97,12 @@
   background: linear-gradient(135deg, rgba(250, 246, 236, 0.72), rgba(243, 237, 224, 0.42));
 }
 
+/* English section names ("I. The chaos") are several times wider than the two-character Chinese ones;
+   at 760px the last one ran under the button. */
+:root:not([data-lang="zh"]) .header-pill {
+  max-width: 900px;
+}
+
 .brand-link {
   display: inline-flex;
   align-items: center;
