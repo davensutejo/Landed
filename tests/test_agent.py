@@ -338,6 +338,47 @@ def test_guardrail_units_and_claims():
     assert ok == []
 
 
+def _de_cost():
+    from landed import tools
+    return tools.dispatch("landed_cost", {"market": "DE", "cogs_cny": 38, "weight_kg": 0.6, "target_margin": 0.25})[0]
+
+
+def test_guardrail_checks_vat_and_duty_against_what_is_sourced_as_vat_and_duty():
+    from landed import guardrail
+    res, seller = _de_cost(), ["500ml blender, ¥38, 0.6kg, Germany, 25% margin"]
+    # 20 and 5 each round from some figure in the result (a 19.7% stress margin, €5.10 COGS)
+    for wrong in ("VAT 20% applies.", "Duty is €5 per item.", "MwSt. 20 %", "Zoll: 5,00 €", "关税为5欧元。", "增值税20%"):
+        assert guardrail.check(wrong, [res], seller), wrong
+    for right in (
+        "Target price €26.37 incl. 19% VAT and a €3 flat duty.",
+        "German VAT is 19 % (€4.21). Duty: €3.00 per tariff category below €150.",
+        "MwSt. 19 %, Zoll 3,00 €, Zielpreis 26,37 €.",
+        "增值税19%，关税3欧元，售价€26.37。",
+        "€26.37 including VAT; at +30% freight the margin drops to 19.7%.",
+        "Biggest risk: Freight +30% (peak season): margin 19.7%\n\nDuty tip: the €3 duty is 11% of this price.",
+        "Above EUR 150 the flat duty no longer applies; 超过 EUR 150 的关税上限。€150 以下关税固定 €3/类。",
+        "两个价格都按德国 19% VAT、每类商品 €3 的欧盟小额包裹统一关税计算。",
+    ):
+        assert guardrail.check(right, [res], seller) == [], right
+
+
+def test_guardrail_labelled_values_come_from_prose_and_key_names_too():
+    from landed import guardrail, tools
+    us = tools.dispatch("compliance_flags", {"market": "US"})[0]
+    assert guardrail.check("An extra 12.5% Section 301 duty applies; a 25% list duty may too.", [us], []) == []
+    assert guardrail.check("The duty is 10%.", [us], [])
+    eu = tools.dispatch("compare_eu", {"market": "DE", "cogs_cny": 38, "weight_kg": 0.6, "target_margin": 0.25})[0]
+    assert guardrail.check("Hungary has the highest VAT, 27%; Luxembourg VAT 17%.", [eu], []) == []
+    assert guardrail.check("Hungary VAT is 30%.", [eu], [])
+
+
+def test_guardrail_catches_a_stale_duty_in_a_table():
+    from landed import guardrail, tools
+    us = tools.dispatch("landed_cost", {"market": "US", "hs_code": "8509.40", "cogs_cny": 38, "weight_kg": 0.6,
+                                        "target_margin": 0.25})[0]
+    assert guardrail.check("| Duty | $0.22 |", [us], []) == ["$0.22"]
+
+
 def test_out_of_category_product_gets_no_card(monkeypatch):
     script = [
         NS(content="", tool_calls=[_call(1, "classify_hs", {"description": "electric scooter", "in_category": False})]),
