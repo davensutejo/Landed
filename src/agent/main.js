@@ -19,6 +19,7 @@ const T = {
   zh: {
     snapshot: '税率快照 2026-11-08 · 所有数字由规则引擎计算，并标注来源',
     example: '看示例',
+    audit: '商品体检',
     exampleLong: '看一个示例：便携榨汁杯 + 备用杯',
     exampleNiche: (n) => `看一个你的品类的示例：${n}`,
     langBtn: 'EN',
@@ -180,6 +181,7 @@ const T = {
   en: {
     snapshot: 'Rates snapshot 2026-11-08 · every number comes from a rules engine, with its source',
     example: 'Example',
+    audit: 'Catalogue audit',
     exampleLong: 'See an example: portable blender + spare cup',
     exampleNiche: (n) => `See an example for your niche: ${n}`,
     langBtn: '中文',

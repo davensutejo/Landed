@@ -79,7 +79,11 @@ _MARKETS["EL"] = "GR"
 
 
 class RowError(ValueError):
-    pass
+    """A row that cannot be read. `code` and `params` let the page say it in the seller's language."""
+
+    def __init__(self, message: str, code: str = "row", **params):
+        super().__init__(message)
+        self.code, self.params = code, params
 
 
 def map_headers(headers: list[str]) -> dict[str, int]:
@@ -111,14 +115,14 @@ def parse_number(raw: str, field: str) -> float:
     """'¥38', '38元', '1,299.00', '1.299,00', '12,5', '0.6kg', '600 g', '25%' -> a float in the field's unit."""
     s = (raw or "").strip()
     if not s:
-        raise RowError(f"{field} is empty")
+        raise RowError(f"{field} is empty", "empty", field=field)
     low = re.sub(r"[\s  ]", "", s.lower())
     grams = bool(re.search(r"\d(g|克|gram|grams)$", low))
     kilos = bool(re.search(r"\d(kg|kgs|公斤|千克)$", low))
     pct = low.endswith(("%", "％"))
     num = re.sub(r"(cny|rmb|eur|euro|usd|us|kgs|kg|公斤|千克|grams?|人民币|克|元|块|欧元|美元|[¥￥€$%％g])", "", low)
     if not re.fullmatch(r"[+-]?(\d+([.,]\d+)*|[.,]\d+)", num):
-        raise RowError(f"{field} is not a number: {raw!r}")
+        raise RowError(f"{field} is not a number: {raw!r}", "not_a_number", field=field, raw=raw)
     if "." in num and "," in num:
         dec = "." if num.rfind(".") > num.rfind(",") else ","
         num = num.replace("," if dec == "." else ".", "").replace(dec, ".")
@@ -132,30 +136,30 @@ def parse_number(raw: str, field: str) -> float:
     try:
         v = float(num)
     except ValueError:
-        raise RowError(f"{field} is not a number: {raw!r}") from None
+        raise RowError(f"{field} is not a number: {raw!r}", "not_a_number", field=field, raw=raw) from None
     if not math.isfinite(v):
-        raise RowError(f"{field} is not a finite number: {raw!r}")
+        raise RowError(f"{field} is not a finite number: {raw!r}", "not_a_number", field=field, raw=raw)
     if field.startswith("weight"):
         if kilos:
             pass
         elif grams or field == "weight_g":
             v /= 1000
         elif v >= UNITLESS_KG_LIMIT:
-            raise RowError(f"weight {raw!r} has no unit: write {raw}g for grams or {raw}kg for kilograms")
+            raise RowError(f"weight {raw!r} has no unit: write {raw}g for grams or {raw}kg for kilograms", "weight_unit", raw=raw)
     if field == "target_margin" and (pct or v >= 1):
         v /= 100
     if field == "monthly_units":
         if v != int(v) or v < 0:
-            raise RowError(f"monthly units must be a whole number: {raw!r}")
+            raise RowError(f"monthly units must be a whole number: {raw!r}", "units_whole", raw=raw)
         if v > MAX_MONTHLY_UNITS:
-            raise RowError(f"monthly units must be at most {MAX_MONTHLY_UNITS:,}")
+            raise RowError(f"monthly units must be at most {MAX_MONTHLY_UNITS:,}", "units_max", max=MAX_MONTHLY_UNITS)
     return v
 
 
 def parse_market(raw: str) -> str:
     code = _MARKETS.get((raw or "").strip().upper()) or _MARKETS.get((raw or "").strip())
     if not code:
-        raise RowError(f"market {raw!r} is not covered: Landed prices the 27 EU countries and the US")
+        raise RowError(f"market {raw!r} is not covered: Landed prices the 27 EU countries and the US", "market", raw=raw)
     return code
 
 
@@ -189,14 +193,14 @@ def read_csv(text: str) -> tuple[list[str], list[tuple[int, list[str]]]]:
 def _row_inputs(row: list[str], cols: dict[str, int], defaults: dict) -> tuple[engine.Inputs, float | None, float | None]:
     market = parse_market(_cell(row, cols, "market")) if _cell(row, cols, "market") else defaults.get("market", "DE")
     if not _cell(row, cols, "cogs_cny"):
-        raise RowError("no unit cost (CNY)")
+        raise RowError("no unit cost (CNY)", "no_cost")
     cogs = parse_number(_cell(row, cols, "cogs_cny"), "cogs_cny")
     if _cell(row, cols, "weight_kg"):
         weight = parse_number(_cell(row, cols, "weight_kg"), "weight_kg")
     elif _cell(row, cols, "weight_g"):
         weight = parse_number(_cell(row, cols, "weight_g"), "weight_g")
     else:
-        raise RowError("no weight")
+        raise RowError("no weight", "no_weight")
     kw = {k: defaults[k] for k in ("fee_rate", "platform", "fee_category", "freight_cny_per_kg", "return_rate", "fx")
           if defaults.get(k) is not None}
     margin = parse_number(_cell(row, cols, "target_margin"), "target_margin") if _cell(row, cols, "target_margin") \
@@ -205,7 +209,7 @@ def _row_inputs(row: list[str], cols: dict[str, int], defaults: dict) -> tuple[e
     if _cell(row, cols, "item_categories"):
         c = parse_number(_cell(row, cols, "item_categories"), "item_categories")
         if c != int(c) or not 1 <= c <= 20:
-            raise RowError("item categories must be a whole number from 1 to 20")
+            raise RowError("item categories must be a whole number from 1 to 20", "categories")
         cats = int(c)
     hs_code = _cell(row, cols, "hs_code") or None
     x = engine.Inputs(market=market, cogs_cny=cogs, weight_kg=weight, target_margin=margin, item_categories=cats,
@@ -218,9 +222,10 @@ def _row_inputs(row: list[str], cols: dict[str, int], defaults: dict) -> tuple[e
         want = "USD" if market == "US" else "EUR"
         got = currency_of(raw_price)
         if got is None and re.search(r"[¥￥€$元块]|eur|usd|cny|rmb|人民币|欧元|美元", raw_price.lower()):
-            raise RowError(f"the selling price {raw_price!r} names more than one currency")
+            raise RowError(f"the selling price {raw_price!r} names more than one currency", "price_currencies", raw=raw_price)
         if got not in (None, want):
-            raise RowError(f"the selling price {raw_price!r} is in {got}; for {market} it must be in {want}")
+            raise RowError(f"the selling price {raw_price!r} is in {got}; for {market} it must be in {want}", "price_currency",
+                           raw=raw_price, got=got, market=market, want=want)
     units = parse_number(_cell(row, cols, "monthly_units"), "monthly_units") if _cell(row, cols, "monthly_units") else None
     return x, price, units
 
@@ -253,17 +258,29 @@ def _actions(x: engine.Inputs, price: float | None, check: dict | None, quote: d
     return acts
 
 
+def _err(e: Exception) -> dict:
+    code, params = (e.code, e.params) if isinstance(e, RowError) else ("engine", {})
+    return {"verdict": "error", "error": str(e), "error_code": code, "error_params": params, "actions": []}
+
+
+def _abstain(e: Exception) -> dict:
+    """The engine declined to price: say why in words the page can translate."""
+    m = re.search(r"about EUR (\d+)", str(e))
+    if m:
+        return {"note": str(e), "note_code": "above_ceiling", "note_params": {"price": int(m.group(1))}}
+    return {"note": str(e), "note_code": "missing_rate", "note_params": {}}
+
+
 def audit_row(row: list[str], cols: dict[str, int], defaults: dict, width: int | None = None) -> dict:
     out: dict = {"name": _cell(row, cols, "name") or None}
     if width is not None and len(row) > width and any(c.strip() for c in row[width:]):
         # An unquoted comma in a name ("Pack, 2") shifts every later column: never read it.
-        return {**out, "verdict": "error", "actions": [],
-                "error": f"this row has {len(row)} cells but the header has {width}; put a name that contains "
-                         f"a comma in double quotes"}
+        return {**out, **_err(RowError(f"this row has {len(row)} cells but the header has {width}; put a name "
+                                        f"that contains a comma in double quotes", "ragged", cells=len(row), width=width))}
     try:
         x, price, units = _row_inputs(row, cols, defaults)
     except (ValueError, TypeError) as e:  # RowError and EngineError are ValueErrors
-        return {**out, "verdict": "error", "error": str(e), "actions": []}
+        return {**out, **_err(e)}
     out.update(market=x.market, currency="USD" if x.market == "US" else "EUR", cogs_cny=x.cogs_cny,
                weight_kg=x.weight_kg, target_margin=x.target_margin, list_price=price, monthly_units=units,
                us_lower_bound=x.indicative)
@@ -275,16 +292,16 @@ def audit_row(row: list[str], cols: dict[str, int], defaults: dict, width: int |
         out["us_lower_bound"] = x.indicative or bool(quote.get("us_scenarios"))
     except data.MissingRate as e:
         out["target_price"] = None
-        out["note"] = str(e)
+        out.update(_abstain(e))
     except engine.EngineError as e:
-        return {**out, "verdict": "error", "error": str(e), "actions": []}
+        return {**out, **_err(e)}
     if price is not None:
         try:
             check = engine.price_check(x, price)
         except data.MissingRate as e:
-            return {**out, "verdict": "not_priced", "note": str(e), "actions": []}
+            return {**out, "verdict": "not_priced", **_abstain(e), "actions": []}
         except engine.EngineError as e:
-            return {**out, "verdict": "error", "error": str(e), "actions": []}
+            return {**out, **_err(e)}
         out.update(profit_per_unit=check["profit_per_unit"], margin=check["margin_pct"],
                    chance_of_loss=check["monte_carlo"]["p_loss"])
         if units is not None:

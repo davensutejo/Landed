@@ -183,3 +183,27 @@ def test_nan_in_a_profile_is_a_422_not_a_500():
     r = c.post("/api/compliance", content='{"market": "DE", "profile": {"fx": Infinity}}',
                headers={"Content-Type": "application/json"})
     assert r.status_code == 422
+
+
+def test_every_row_message_code_is_translated_on_the_page():
+    import pathlib
+    import re as _re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    src = (root / "landed" / "catalog.py").read_text(encoding="utf-8")
+    page = (root / "audit.html").read_text(encoding="utf-8")
+    codes = {"above_ceiling", "missing_rate"}
+    for m in _re.finditer(r"RowError\(", src):
+        hit = _re.search(r'",\s*"([a-z_]+)"', src[m.end():m.end() + 300])
+        if hit:
+            codes.add(hit.group(1))
+    assert {"not_a_number", "weight_unit", "price_currency", "ragged", "market"} <= codes
+    for code in codes:
+        assert len(_re.findall(rf"\b{code}: \(?p?\)? =>", page)) == 2, code  # once in zh, once in en
+
+
+def test_rows_carry_codes_the_page_can_translate():
+    res = catalog.audit("name,cost,weight,price,market\nA,abc,0.2,9.99,DE\nB,900,14,399,DE\nC,10,250,9,DE\n")
+    got = {r["name"]: (r.get("error_code") or r.get("note_code"), r.get("error_params") or r.get("note_params")) for r in res["rows"]}
+    assert got["A"] == ("not_a_number", {"field": "cogs_cny", "raw": "abc"})
+    assert got["B"] == ("above_ceiling", {"price": 399})
+    assert got["C"] == ("weight_unit", {"raw": "250"})

@@ -115,6 +115,25 @@ const T = {
       better_market: a => `同价卖到${a.mname}每件多赚 ${a.m(a.gain_per_unit)}`,
     },
     net: '网络连接失败，请稍后再试。', http: s => `服务器出错（${s}），请稍后再试。`,
+    f: { cogs_cny: '成本', weight_kg: '重量', weight_g: '重量', list_price: '售价', target_margin: '目标毛利', monthly_units: '月销量', item_categories: '品类数' },
+    e: {
+      empty: p => `${p.f}为空`,
+      not_a_number: p => `${p.f}「${p.raw}」不是数字`,
+      weight_unit: p => `重量「${p.raw}」没有单位：克请写 ${p.raw}g，公斤请写 ${p.raw}kg`,
+      units_whole: p => `月销量「${p.raw}」必须是整数`,
+      units_max: p => `月销量最多 ${p.max.toLocaleString()}`,
+      market: p => `暂不支持市场「${p.raw}」：目前覆盖欧盟 27 国和美国`,
+      no_cost: () => '缺少成本（人民币）',
+      no_weight: () => '缺少重量',
+      categories: () => '品类数必须是 1 到 20 的整数',
+      price_currencies: p => `售价「${p.raw}」同时写了几种货币`,
+      price_currency: p => `售价「${p.raw}」是${p.got === 'USD' ? '美元' : p.got === 'CNY' ? '人民币' : '欧元'}，卖到${p.mname}应填${p.want === 'USD' ? '美元' : '欧元'}`,
+      ragged: p => `这一行有 ${p.cells} 格，表头只有 ${p.width} 列：商品名里有逗号时请加英文双引号`,
+    },
+    n: {
+      above_ceiling: p => `约 €${p.price}，超过 €150 小包上限：超过后按具体税号的常规关税计算，本工具不定价，请咨询报关行`,
+      missing_rate: () => '缺少已核实的税率，本工具不估算',
+    },
     target: '目标价', lb: '美国价为下限：部分关税未加载', cols: '已识别的列：', ignored: '已忽略：',
     foot: '决策支持，不是持牌报关行。欧盟价格仅适用于 €150 以下小包（每税则类别 €3 平征关税）。',
     working: '体检中…', none: '—',
@@ -136,6 +155,25 @@ const T = {
       better_market: a => `At the same price, ${a.mname} earns ${a.m(a.gain_per_unit)} more per unit`,
     },
     net: 'Could not reach the server. Please try again.', http: s => `The server had a problem (${s}). Please try again.`,
+    f: { cogs_cny: 'Cost', weight_kg: 'Weight', weight_g: 'Weight', list_price: 'Price', target_margin: 'Target margin', monthly_units: 'Monthly units', item_categories: 'Item categories' },
+    e: {
+      empty: p => `${p.f} is empty`,
+      not_a_number: p => `${p.f} "${p.raw}" is not a number`,
+      weight_unit: p => `Weight "${p.raw}" has no unit: write ${p.raw}g for grams or ${p.raw}kg for kilograms`,
+      units_whole: p => `Monthly units "${p.raw}" must be a whole number`,
+      units_max: p => `Monthly units can be at most ${p.max.toLocaleString()}`,
+      market: p => `Market "${p.raw}" is not covered yet: Landed prices the 27 EU countries and the US`,
+      no_cost: () => 'No unit cost (CNY)',
+      no_weight: () => 'No weight',
+      categories: () => 'Item categories must be a whole number from 1 to 20',
+      price_currencies: p => `Price "${p.raw}" names more than one currency`,
+      price_currency: p => `Price "${p.raw}" is in ${p.got}; for ${p.mname} enter it in ${p.want}`,
+      ragged: p => `This row has ${p.cells} cells but the header has ${p.width}: put a name that contains a comma in double quotes`,
+    },
+    n: {
+      above_ceiling: p => `About €${p.price}, above the €150 parcel ceiling. Above it the exact code's duty applies, which Landed does not price; ask a customs broker`,
+      missing_rate: () => 'A verified rate is missing, so Landed does not estimate this one',
+    },
     target: 'target', lb: 'US price is a floor: part of the duty is not loaded', cols: 'Columns read: ', ignored: 'Ignored: ',
     foot: 'Decision support, not a licensed customs broker. EU prices cover parcels below €150 only (flat €3 duty per tariff category).',
     working: 'Auditing…', none: '—',
@@ -190,7 +228,17 @@ function render(r) {
     const cur = row.currency === 'USD' ? '$' : '€';
     const ctx = a => ({ ...a, m: v => money(v, cur), y: v => money(v, '¥'), mname: a.market ? mname(a.market) : '' });
     const acts = (row.actions || []).map(a => `<li>${esc(t.a[a.kind] ? t.a[a.kind](ctx(a)) : a.kind)}</li>`).join('');
-    const note = row.error || row.note || '';
+    // Known codes in the page's language; anything else (engine messages) falls back to the server's English.
+    const say = (dict, code, params, fallback) => {
+      const fn = code && dict[code];
+      if (!fn) return fallback || '';
+      const p = { ...(params || {}) };
+      if (p.field) p.f = t.f[p.field] || p.field;
+      if (p.market) p.mname = mname(p.market);
+      try { return fn(p); } catch { return fallback || ''; }
+    };
+    const note = row.verdict === 'error' ? say(t.e, row.error_code, row.error_params, row.error)
+      : say(t.n, row.note_code, row.note_params, row.note);
     const now = row.list_price != null ? `${money(row.list_price, cur)}<br><span class="muted">${pct(row.margin)}</span>` : t.none;
     const tp = row.target_price != null ? `<br><span class="muted">${t.target} ${money(row.target_price, cur)}</span>` : '';
     return `<tr>
