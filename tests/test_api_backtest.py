@@ -101,3 +101,15 @@ def test_sources_all_have_provenance():
     for row in rows:
         assert row["status"] in {"verified", "secondary", "assumption", "seller_input", "unknown"}
         assert row["snapshot_date"]
+
+
+def test_nan_or_infinity_in_a_request_is_a_422_not_a_500():
+    """JSON NaN/Infinity failed validation, and FastAPI could not encode the echoed input: a 500."""
+    from fastapi.testclient import TestClient
+
+    from api.main import app
+
+    c = TestClient(app)
+    for body in ('{"market": "DE", "profile": {"fx": NaN}}', '{"market": "DE", "profile": {"fx": Infinity}}'):
+        r = c.post("/api/compliance", content=body, headers={"Content-Type": "application/json"})
+        assert r.status_code == 422, body

@@ -135,23 +135,6 @@ def compare_eu(body: PriceIn):
     return _engine_call(engine.compare_eu, engine.Inputs(**body.model_dump(exclude_none=True, exclude={"list_price"})), body.list_price)
 
 
-class AuditIn(BaseModel):
-    csv: str = Field(max_length=500_000)
-    profile: accounts.Profile | None = None  # market, margin, fee, freight, returns, FX defaults for every row
-
-
-_AUDIT_DEFAULTS = ("market", "target_margin", "fee_rate", "platform", "freight_cny_per_kg", "return_rate", "fx")
-
-
-@app.post("/api/audit")
-def audit(body: AuditIn, request: Request):
-    from landed import catalog
-
-    _rate_limit(request)
-    prof = body.profile.clean() if body.profile else {}
-    return _engine_call(catalog.audit, body.csv, {k: prof[k] for k in _AUDIT_DEFAULTS if prof.get(k) is not None})
-
-
 @app.post("/api/classify")
 def classify(body: ClassifyIn):
     return hs.classify(body.description, body.attributes)
@@ -219,14 +202,6 @@ def chat(body: ChatIn, request: Request):
 
 # Serve the built landing page (npm run build -> dist/) from the same origin.
 DIST = ROOT / "dist"
-
-
-@app.get("/audit", include_in_schema=False)
-def audit_page():
-    page = DIST / "audit.html"
-    if not page.exists():
-        raise HTTPException(404, "Run `npm run build` first.")
-    return FileResponse(page)
 
 
 @app.get("/agent", include_in_schema=False)

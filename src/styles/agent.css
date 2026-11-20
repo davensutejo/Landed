@@ -85,7 +85,6 @@ body.lw {
 .btn:hover { border-color: var(--ink-2); }
 .btn--quiet { background: transparent; border-color: transparent; color: var(--ink-2); }
 .btn--quiet:hover { background: var(--info-bg); border-color: transparent; }
-#lw-audit { text-decoration: none; }
 .btn--primary { background: var(--ink); color: #fff !important; border-color: var(--ink); }
 .btn--primary:hover { background: #2a2520; }
 .lw-lang { font-weight: 600; min-width: 48px; }
@@ -485,7 +484,7 @@ body.lw {
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 16px; border-radius: 999px; font-size: 0.88rem; z-index: 50; max-width: calc(100vw - 32px); }
 
 @media (max-width: 880px) {
-  #lw-example, #lw-audit { display: none; }
+  #lw-example { display: none; }
   .lw-account { max-width: 96px; }
   .setup__row, .setup__own .fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   
