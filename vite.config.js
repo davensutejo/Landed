@@ -8,7 +8,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        agent: resolve(__dirname, 'agent.html')
+        agent: resolve(__dirname, 'agent.html'),
+        audit: resolve(__dirname, 'audit.html')
       }
     }
   },
