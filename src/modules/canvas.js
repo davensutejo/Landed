@@ -1,9 +1,10 @@
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 import { makeDitheredArt, ditherReveal } from '../lib/dither.js';
+import { isZh, L, onLang } from '../i18n.js';
 
 // The audit trail: every tool call, source and flag behind one answer.
-const CARDS_DATA = [
+const CARDS_EN = [
   { type: 'chat', title: 'SELLER: "500ml portable blender + spare Tritan cup, ¥38, 0.6 kg. EU price for 25% margin?"', x: -720, y: -420, depth: 1.0 },
   { type: 'note', title: 'ASK: Is the motor self-contained? Is the battery built in, and what is its Wh rating?', x: -340, y: -460, depth: 1.15 },
   { type: 'gold', title: 'hs_disambiguate → 8509.40 (food mixer, self-contained motor) · confirmed by seller', x: 80, y: -380, depth: 0.9 },
@@ -22,11 +23,37 @@ const CARDS_DATA = [
   { type: 'chat', title: 'listing_localize(lang="de") → copy only · numbers injected from engine', x: -40, y: -180, depth: 1.08 }
 ];
 
-const COLLABS = [
-  { name: 'HS TOOL', color: '#E8643C', phase: 0 },
-  { name: 'COST ENGINE', color: '#2B3A8C', phase: 2.1 },
-  { name: 'LISTING', color: '#C9A24B', phase: 4.2 }
+// Same cards, same positions: only the words change. Tool and rule names stay as written in the code.
+const TITLES_ZH = [
+  '卖家：“500ml 便携榨汁杯 + Tritan 备用杯，成本 ¥38，0.6 kg，卖欧盟要 25% 毛利，定价多少？”',
+  '追问：电机是内置的吗？电池是内置的吗？容量多少 Wh？',
+  'hs_disambiguate → 8509.40（食品搅拌机，电机内置）· 卖家已确认',
+  'WCO 归类总规则 3(b) · 零售成套货品',
+  '图　售价构成 · 货值 → 运费 → €3 关税 → 佣金 → 增值税',
+  '来源：欧盟每类商品 €3 关税 · ec.europa.eu · 2026-11-08',
+  '图　5,000 次模拟的毛利分布 · 标出 P5',
+  'cost_engine(price, categories=2) → 确定性计算 · 不经过 AI',
+  '图　压力测试 · 人民币升值 5% · 退货 15% · 运费上涨 30%',
+  '合规提示：UN 3481 · IATA PI 967 · 设备内装锂电池',
+  '图　本地化商品页 · 德语',
+  '护栏：没有 source_url 就不给数字，绝不编造税率',
+  '图　HS 前三候选及法律依据',
+  '来源：德国增值税 19% · IOSS · 快照 2026-11-08',
+  '合规提示：食品接触材料，需按欧盟 1935/2004 号法规出具声明',
+  'listing_localize(lang="de") → 只写文案 · 数字由引擎填入'
 ];
+const CARDS_DATA = CARDS_EN;
+const cardTitle = (i) => (isZh() ? TITLES_ZH[i] : CARDS_EN[i].title);
+
+const COLLABS = [
+  { label: () => L('HS TOOL', 'HS 归类'), color: '#E8643C', phase: 0 },
+  { label: () => L('COST ENGINE', '成本引擎'), color: '#2B3A8C', phase: 2.1 },
+  { label: () => L('LISTING', '商品文案'), color: '#C9A24B', phase: 4.2 }
+];
+const cardMeta = (item, idx) =>
+  item.type === 'art'
+    ? `${L('STEP', '步骤')} ${String(idx + 1).padStart(2, '0')}`
+    : (isZh() ? { chat: '工具调用', note: '合规提示', gold: '数据来源', specimen: '规则' } : { chat: 'TOOL CALL', note: 'FLAG', gold: 'PROVENANCE', specimen: 'RULE' })[item.type] || item.type.toUpperCase();
 
 export function initCanvas(onFrame) {
   const viewport = document.getElementById('canvas-viewport');
@@ -65,28 +92,29 @@ export function initCanvas(onFrame) {
 
     if (item.type === 'art') {
       el.innerHTML = `
-        <div class="canvas-card__meta">STEP ${String(idx + 1).padStart(2, '0')}</div>
+        <div class="canvas-card__meta">${cardMeta(item, idx)}</div>
         <canvas width="248" height="156" class="canvas-card__art"></canvas>
-        <div class="figure-caption">${item.title}</div>
+        <div class="figure-caption">${cardTitle(idx)}</div>
       `;
       const c = el.querySelector('canvas');
       if (c) makeDitheredArt(c, item.seed || idx, 'atelier', 2);
     } else {
       el.innerHTML = `
-        <div class="canvas-card__meta">${({ chat: 'TOOL CALL', note: 'FLAG', gold: 'PROVENANCE', specimen: 'RULE' })[item.type] || item.type.toUpperCase()}</div>
-        <div class="figure-caption">${item.title}</div>
+        <div class="canvas-card__meta">${cardMeta(item, idx)}</div>
+        <div class="figure-caption">${cardTitle(idx)}</div>
       `;
     }
 
     world.appendChild(el);
 
+    let li = null;
     if (a11yList) {
-      const li = document.createElement('li');
-      li.textContent = item.title;
+      li = document.createElement('li');
+      li.textContent = cardTitle(idx);
       a11yList.appendChild(li);
     }
 
-    return { ...item, el, revealed: false };
+    return { ...item, el, li, revealed: false };
   });
 
   // Collaborator cursors
@@ -97,11 +125,28 @@ export function initCanvas(onFrame) {
       <svg width="14" height="14" style="color:${c.color}"><use href="#sparkle"></use></svg>
       <div class="collab-cursor__tag">
         <span class="live-dot"></span>
-        <span>${c.name}</span>
+        <span class="collab-cursor__name">${c.label()}</span>
       </div>
     `;
     collabLayer?.appendChild(node);
     return { ...c, node };
+  });
+
+  // Language switch: same cards in the same places, only the words change
+  onLang({
+    apply: () => {
+      cardItems.forEach((item, idx) => {
+        const meta = item.el.querySelector('.canvas-card__meta');
+        const cap = item.el.querySelector('.figure-caption');
+        if (meta) meta.textContent = cardMeta(item, idx);
+        if (cap) cap.textContent = cardTitle(idx);
+        if (item.li) item.li.textContent = cardTitle(idx);
+      });
+      collabNodes.forEach((c) => {
+        const name = c.node.querySelector('.collab-cursor__name');
+        if (name) name.textContent = c.label();
+      });
+    }
   });
 
   // Draggable proxy with inertia

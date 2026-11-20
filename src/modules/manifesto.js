@@ -4,6 +4,10 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Draggable } from 'gsap/Draggable';
 import { ditherCanvas, PALETTES, BAYER4 } from '../lib/dither.js';
 import { isReducedMotion } from '../lib/a11y.js';
+import { isZh, onLang, textFor } from '../i18n.js';
+
+// Chinese runs in the self-hosted serif at a size and leading made for CJK (no word spaces, denser glyphs).
+const serifFor = (zh) => (zh ? '"Noto Serif SC"' : '"Instrument Serif"');
 
 function drawCameoMedallion(canvas) {
   const ctx = canvas.getContext('2d');
@@ -62,17 +66,18 @@ export async function initManifesto(onFrame) {
     drawCameoMedallion(cameoCanvas);
   }
 
-  const text = sourceEl.textContent.trim();
+  let text = sourceEl.textContent.trim();
   if (document.fonts && document.fonts.load) {
-    await document.fonts.load('400 34px "Instrument Serif"');
+    // with the text, so the unicode-range chunks holding these glyphs load before layout measures them
+    await document.fonts.load(`400 34px ${serifFor(isZh())}`, text).catch(() => {});
   }
 
   let prepared = null;
   let isMobile = window.matchMedia('(max-width: 767px)').matches;
   const getFontSpec = () =>
     isMobile
-      ? { font: '400 22px "Instrument Serif"', lineHeight: 32, r: 54 }
-      : { font: '400 34px "Instrument Serif"', lineHeight: 46, r: 78 };
+      ? isZh() ? { font: `400 18px ${serifFor(true)}`, lineHeight: 32, r: 54 } : { font: '400 22px "Instrument Serif"', lineHeight: 32, r: 54 }
+      : isZh() ? { font: `400 26px ${serifFor(true)}`, lineHeight: 46, r: 78 } : { font: '400 34px "Instrument Serif"', lineHeight: 46, r: 78 };
 
   let spec = getFontSpec();
   try {
@@ -256,6 +261,24 @@ export async function initManifesto(onFrame) {
       if (dragInstance) dragInstance.update();
     }
     runPretextLayout();
+  });
+
+  // Language switch: load the new text's glyphs while the old text fades, then re-measure and re-flow.
+  onLang({
+    prepare: (to) =>
+      document.fonts && document.fonts.load
+        ? document.fonts.load(`400 34px ${serifFor(to === 'zh')}`, textFor('manifesto.text', to)).catch(() => {})
+        : null,
+    apply: () => {
+      text = sourceEl.textContent.trim();
+      spec = getFontSpec();
+      try {
+        prepared = prepareWithSegments(text, spec.font);
+      } catch {
+        return;
+      }
+      runPretextLayout();
+    }
   });
 
   window.addEventListener('resize', () => {

@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import { isZh, L, onLang } from '../i18n.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { isReducedMotion } from '../lib/a11y.js';
 
@@ -12,6 +13,14 @@ export function initShowreel(onFrame) {
   const asciiCanvas = document.getElementById('showreel-ascii-canvas');
   const lens = document.getElementById('showreel-lens');
   const hud = document.getElementById('showreel-hud');
+  // The HUD starts with its static line; once the scrub has written a count, a language switch
+  // re-writes that count rather than the static line.
+  let hudMerged = null;
+  const writeHud = () => {
+    if (!hud || hudMerged == null) return;
+    hud.textContent = hudMerged >= 8 ? L('8 INPUTS → 1 LANDED PRICE', '8 项输入 → 1 个到岸价') : L(`${hudMerged}/8 INPUTS MERGED`, `已合并 ${hudMerged}/8 项`);
+  };
+  onLang({ apply: writeHud });
   if (!section || !stage || !asciiCanvas || !procCanvas) return;
 
   const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -62,14 +71,14 @@ export function initShowreel(onFrame) {
 
   // The eight inputs a seller stitches together. Same eight as the section copy.
   const FRAGMENTS = [
-    { text: 'HS CODE', ax: 0.12, ay: 0.2 },
-    { text: 'DUTY', ax: 0.84, ay: 0.16 },
-    { text: 'VAT 19%', ax: 0.08, ay: 0.72 },
-    { text: 'FREIGHT', ax: 0.88, ay: 0.7 },
-    { text: 'FEES', ax: 0.3, ay: 0.9 },
-    { text: '¥→€ FX', ax: 0.7, ay: 0.88 },
-    { text: 'RETURNS', ax: 0.28, ay: 0.1 },
-    { text: 'LISTING', ax: 0.66, ay: 0.08 }
+    { en: 'HS CODE', zh: 'HS 编码', ax: 0.12, ay: 0.2 },
+    { en: 'DUTY', zh: '关税', ax: 0.84, ay: 0.16 },
+    { en: 'VAT 19%', zh: '增值税 19%', ax: 0.08, ay: 0.72 },
+    { en: 'FREIGHT', zh: '头程运费', ax: 0.88, ay: 0.7 },
+    { en: 'FEES', zh: '平台佣金', ax: 0.3, ay: 0.9 },
+    { en: '¥→€ FX', zh: '¥→€ 汇率', ax: 0.7, ay: 0.88 },
+    { en: 'RETURNS', zh: '退货', ax: 0.28, ay: 0.1 },
+    { en: 'LISTING', zh: '商品页', ax: 0.66, ay: 0.08 }
   ].map((f, i) => ({ ...f, phase: i * 0.83, orbit: 14 + (i % 3) * 7 }));
 
   // Fragments start scattered and drifting (the spreadsheet chaos) and slide into
@@ -103,8 +112,8 @@ export function initShowreel(onFrame) {
     procCtx.arc(cx - tagW / 2 + 20, cy, 6, 0, Math.PI * 2); // tag hole
     procCtx.fill();
     procCtx.fillStyle = '#FAF6EC';
-    procCtx.font = '700 46px "JetBrains Mono", monospace';
-    procCtx.fillText(merge > 0.97 ? 'ONE PRICE' : 'PRICE ?', cx + 10, cy + 2);
+    procCtx.font = isZh() ? '600 44px "Noto Serif SC", "Songti SC", serif' : '700 46px "JetBrains Mono", monospace';
+    procCtx.fillText(merge > 0.97 ? L('ONE PRICE', '一个价') : L('PRICE ?', '售价？'), cx + 10, cy + 2);
     procCtx.restore();
 
     // Fragments
@@ -122,7 +131,7 @@ export function initShowreel(onFrame) {
       procCtx.rotate((1 - ease) * Math.sin(time * 0.7 + f.phase) * 0.35);
       procCtx.globalAlpha = 1 - ease * 0.85;
       procCtx.fillStyle = '#F3EDE0';
-      procCtx.fillText(f.text, 0, 0);
+      procCtx.fillText(L(f.en, f.zh), 0, 0);
       procCtx.restore();
     }
   }
@@ -220,10 +229,8 @@ export function initShowreel(onFrame) {
         } else {
           state.asciiOpacity = 1;
         }
-        if (hud) {
-          const merged = Math.round(state.merge * 8);
-          hud.textContent = merged >= 8 ? '8 INPUTS → 1 LANDED PRICE' : `${merged}/8 INPUTS MERGED`;
-        }
+        hudMerged = Math.round(state.merge * 8);
+        writeHud();
       }
     });
   }

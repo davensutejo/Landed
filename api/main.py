@@ -95,6 +95,32 @@ def sweep(body: CalcIn):
         raise HTTPException(422, {"status": "error", "error": str(e)})
 
 
+class PriceIn(CalcIn):
+    # Range checks live in the engine: a pydantic gt/le error would echo NaN/inf into a 422 that can't be JSON-encoded.
+    list_price: float | None = Field(default=None, strict=True)  # strict: `true` is not a price of 1
+
+
+def _engine_call(fn, *args):
+    try:
+        return fn(*args)
+    except data.MissingRate as e:
+        raise HTTPException(422, {"status": "abstain", "error": str(e)})
+    except engine.EngineError as e:
+        raise HTTPException(422, {"status": "error", "error": str(e)})
+
+
+@app.post("/api/price-check")
+def price_check(body: PriceIn):
+    if body.list_price is None:
+        raise HTTPException(422, {"status": "error", "error": "list_price is required"})
+    return _engine_call(engine.price_check, engine.Inputs(**body.model_dump(exclude_none=True, exclude={"list_price"})), body.list_price)
+
+
+@app.post("/api/compare-eu")
+def compare_eu(body: PriceIn):
+    return _engine_call(engine.compare_eu, engine.Inputs(**body.model_dump(exclude_none=True, exclude={"list_price"})), body.list_price)
+
+
 @app.post("/api/classify")
 def classify(body: ClassifyIn):
     return hs.classify(body.description, body.attributes)

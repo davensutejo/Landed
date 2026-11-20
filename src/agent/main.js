@@ -6,7 +6,7 @@ import '../styles/onboarding.css';
 
 import { esc, renderMarkdown } from '../lib/markdown.js';
 import { streamChat, postJSON } from '../lib/agentStream.js';
-import { histogram, riskCurve, money, pct } from './charts.js';
+import { histogram, riskCurve, money, pct, sym } from './charts.js';
 import { renderHSQuiz, renderAskForm, detectLang } from '../lib/askWidgets.js';
 import { createPersonal } from './personal.js';
 import { nicheInfo, COST_BANDS, platformLabel, platformsFor, cachedPlatforms } from './onboarding.js';
@@ -37,7 +37,7 @@ const T = {
     send: '发送',
     working: (s) => `正在计算… ${s}s`,
     answered: (s) => `${s} 秒内完成`,
-    tool: { classify_hs: '识别 HS 编码', landed_cost: '计算到岸售价', compliance_flags: '检查合规要求', ask_seller: '整理需要补充的信息' },
+    tool: { classify_hs: '识别 HS 编码', landed_cost: '计算到岸售价', price_check: '核算这个售价', compare_eu: '对比欧盟 27 国', compliance_flags: '检查合规要求', ask_seller: '整理需要补充的信息' },
     seeResult: '查看完整结果 →',
     guardrail: (x) => `以下内容在任何数据来源和你的消息里都找不到，请不要直接使用：${x}`,
     unavailable: () => '暂时连不上 AI，请稍后再试。你仍然可以点「看示例」使用计算引擎，所有数字都不经过 AI。',
@@ -109,6 +109,30 @@ const T = {
     curveCaption: '不同售价下，达到目标毛利（绿）和亏损（红）的概率',
     chart: { target: '目标', p5: 'P5', conf: '95% 达标线', hit: '■ 达到目标毛利', loss: '■ 亏损', price: '目标售价' },
     curveReadout: (p, hit, p5, loss) => `售价 <b>${p}</b>：达到目标毛利的概率 <b>${hit}</b> · 最差 5% 情景毛利 ${p5} · 亏损概率 ${loss}`,
+    checkTitle: '对标售价：这个价能赚钱吗？',
+    checkHint: '输入竞品或平台上的售价，反推利润和最高进货价（不经过 AI）',
+    checkLabel: '售价',
+    checkProfit: '每件利润',
+    checkMarginNote: (m) => `毛利率 ${m}`,
+    checkHit: '达到目标毛利的概率',
+    checkLoss: '亏损概率',
+    checkSim: '5,000 次情景模拟',
+    checkMax: (m, c) => `按这个售价，要保住 ${m} 毛利，单件成本最多 <b>${c}</b>`,
+    checkBE: (c) => `；保本的最高成本是 <b>${c}</b>。`,
+    checkYours: (c, ok) => (ok ? `你现在的成本 ${c} 在范围内。` : `你现在的成本 ${c} 超出了，按这个价达不到目标毛利。`),
+    checkNoTarget: (m) => `按这个售价，任何进货成本都达不到 ${m} 毛利`,
+    checkNone: '这个售价连运费、关税和平台佣金都覆盖不了，任何进货价都会亏钱。',
+    checkAbove: '售价超过 €150，€3 统一关税不适用，到岸不计算这个价格。',
+    checkBad: '请输入一个正数售价。',
+    checkUS: '美国：这条税号的部分关税尚未载入，实际利润会比这里低，最高进货价也会更低。',
+    euTitle: '同一商品，欧盟 27 国对比',
+    euHint: (p, mine) => (mine ? `都按你输入的 ${p} 售价，比较每件利润` : `都按 ${p} 售价，比较每件利润`),
+    euTh: ['国家', '增值税', '建议售价', '每件利润', '毛利率'],
+    euNote: '各国差别主要来自增值税；€3 关税和运费在欧盟一致。WEEE、包装等登记需在每个目的国分别办理。点国家名可切换。',
+    euNotePlat: '* 你的平台在该国不销售，佣金按 15% 占位值计算。',
+    euDash: '—',
+    euMore: (n) => `显示全部 ${n} 国`,
+    euLess: '收起',
     flagsTitle: '上架前必须完成',
     flagsHint: '按目的国法规，点「来源」查看原文',
     flagsNone: '按你提供的信息，没有额外的合规事项。',
@@ -174,7 +198,7 @@ const T = {
     send: 'Send',
     working: (s) => `Working… ${s}s`,
     answered: (s) => `Done in ${s}s`,
-    tool: { classify_hs: 'Checking the HS code', landed_cost: 'Pricing', compliance_flags: 'Checking requirements', ask_seller: 'Preparing questions' },
+    tool: { classify_hs: 'Checking the HS code', landed_cost: 'Pricing', price_check: 'Checking that price', compare_eu: 'Comparing 27 EU countries', compliance_flags: 'Checking requirements', ask_seller: 'Preparing questions' },
     seeResult: 'See the full result →',
     guardrail: (x) => `Not found in any source or in your messages, so don’t rely on: ${x}`,
     unavailable: () => 'The AI is unavailable right now. Please try again shortly. You can still use the engine with “Example”: no number goes through the AI.',
@@ -246,6 +270,30 @@ const T = {
     curveCaption: 'Chance of hitting your margin (green) and of a loss (red) at each price',
     chart: { target: 'target', p5: 'P5', conf: '95% line', hit: '■ hits target margin', loss: '■ loss', price: 'recommended' },
     curveReadout: (p, hit, p5, loss) => `At <b>${p}</b>: ${hit} chance of hitting your margin · worst-5% margin ${p5} · chance of a loss ${loss}`,
+    checkTitle: 'It sells for this. Can I make money?',
+    checkHint: 'Enter a competitor’s or the market’s price to see your profit and the most you can pay (no AI involved)',
+    checkLabel: 'Selling price',
+    checkProfit: 'Profit per unit',
+    checkMarginNote: (m) => `${m} margin`,
+    checkHit: 'Chance of hitting your margin',
+    checkLoss: 'Chance of a loss',
+    checkSim: '5,000 simulated scenarios',
+    checkMax: (m, c) => `At this price, to keep a ${m} margin you can pay at most <b>${c}</b> per unit`,
+    checkBE: (c) => `; to break even, at most <b>${c}</b>.`,
+    checkYours: (c, ok) => (ok ? `Your cost of ${c} fits.` : `Your cost of ${c} is above that, so this price misses your margin.`),
+    checkNoTarget: (m) => `At this price no unit cost reaches a ${m} margin`,
+    checkNone: 'This price does not even cover freight, duty and the platform fee: you lose money at any unit cost.',
+    checkAbove: 'Above €150 the €3 flat duty does not apply, so Landed does not price this.',
+    checkBad: 'Enter a positive price.',
+    checkUS: 'US: part of this line’s duty is not loaded, so the real profit and the most you can pay are lower than shown.',
+    euTitle: 'Same product, all 27 EU countries',
+    euHint: (p, mine) => (mine ? `Profit per unit at your price of ${p} in each country` : `Profit per unit if you charge ${p} everywhere`),
+    euTh: ['Country', 'VAT', 'Target price', 'Profit / unit', 'Margin'],
+    euNote: 'Countries differ mainly by VAT; the €3 duty and freight are the same EU-wide. WEEE and packaging registration is per country. Click a country to switch to it.',
+    euNotePlat: '* Your platform is not sold there, so the 15% placeholder fee is used.',
+    euDash: '—',
+    euMore: (n) => `Show all ${n} countries`,
+    euLess: 'Show fewer',
     flagsTitle: 'Before you list',
     flagsHint: 'From the destination’s rules; “source” opens the legal text',
     flagsNone: 'Nothing extra for what you’ve told me.',
@@ -329,6 +377,11 @@ const state = {
   result: null,
   sweep: null,
   compare: null,
+  checkPrice: null, // the seller's "it sells for X" price, in the current market's currency
+  checkCur: null,
+  check: null,
+  eu: null,
+  euAll: false,
   hs: null,
   flags: null,
   flagAttrs: null,
@@ -428,12 +481,35 @@ function snapshotProduct() {
       overrides: { ...state.overrides },
       flagAttrs: state.flagAttrs ? { ...state.flagAttrs } : null,
       priceText: money(wf.price, wf.currency),
-      savedAt: Date.now()
+      savedAt: Date.now(),
+      // what /api/products/review needs to re-price it later and say what moved
+      calc: payload(),
+      baseline: baselineOf(state.result),
+      ...(state.checkPrice ? { check: { price: state.checkPrice } } : {})
     }
   };
 }
 
+// Same shape as engine.baseline_of(): the result and every sourced rate behind it.
+function baselineOf(res) {
+  const rates = {};
+  (res.provenance || []).forEach((p) => {
+    if (p.key && p.status !== 'seller_input') rates[p.key] = { value: p.value, snapshot_date: p.snapshot_date, label: p.label, unit: p.unit };
+  });
+  return {
+    price: res.waterfall.price,
+    currency: res.waterfall.currency,
+    margin_pct: res.waterfall.margin_pct,
+    p_loss: res.monte_carlo.p_loss,
+    floor_price_95: res.monte_carlo.floor_price_95,
+    rates
+  };
+}
+
 function openProduct(data) {
+  state.checkPrice = data.check?.price || null;
+  state.checkCur = state.checkPrice ? (data.inputs?.market === 'US' ? 'USD' : 'EUR') : null;
+  state.check = null;
   state.inputs = { ...data.inputs };
   state.overrides = { ...(data.overrides || {}) };
   state.flagAttrs = data.flagAttrs || null;
@@ -478,6 +554,10 @@ function applyCopy() {
   if (state.flags) renderFlags(state.flags);
   if (state.inputs) buildAdjust();
   if (state.compare !== null && state.result) renderCompare();
+  if (state.result) {
+    renderCheck();
+    renderEU();
+  }
   renderTimeline();
 }
 
@@ -605,7 +685,7 @@ function renderNotice(text) {
   n.innerHTML = `<b>${esc(t('abstainT'))}</b>${esc(text)}`;
 }
 function hidePrice() {
-  ['sec-price', 'sec-breakdown', 'sec-risk'].forEach((id) => ($(id).hidden = true));
+  ['sec-price', 'sec-breakdown', 'sec-risk', 'sec-check', 'sec-eu'].forEach((id) => ($(id).hidden = true));
 }
 
 // ------------------------------------------------------------------ price
@@ -898,6 +978,155 @@ function renderCompare() {
   } else el.textContent = '';
 }
 
+const signedMoney = (v, cur) => (v < 0 ? `-${money(-v, cur)}` : money(v, cur));
+
+// ------------------------------------------------------------------ reverse mode: "it sells for X"
+const checkCall = () => {
+  const price = state.checkPrice;
+  if (!price) return Promise.resolve(null);
+  return postJSON('/api/price-check', { ...payload(), list_price: price }).then(
+    (r) => r,
+    (e) => ({ error: price > 150 && isEU(state.inputs.market) ? t('checkAbove') : typeof e.message === 'string' && !/object/i.test(e.message) ? localizeAbstain(e.message) : t('checkBad') })
+  );
+};
+
+function renderCheck() {
+  const sec = $('sec-check');
+  if (!state.result) return;
+  sec.hidden = false;
+  const cur = state.result.waterfall.currency;
+  $('check-cur').textContent = sym(cur);
+  const box = $('check-price');
+  if (document.activeElement !== box) box.value = state.checkPrice ?? '';
+  box.placeholder = state.result.waterfall.price.toFixed(2);
+  const out = $('check-out');
+  const c = state.check;
+  if (!state.checkPrice && state.checkBad) {
+    out.innerHTML = `<p class="check-err">${esc(t('checkBad'))}</p>`;
+    return;
+  }
+  if (!state.checkPrice || !c) {
+    out.innerHTML = '';
+    return;
+  }
+  if (c.error) {
+    out.innerHTML = `<p class="check-err">${esc(c.error)}</p>`;
+    return;
+  }
+  const mc = c.monte_carlo;
+  const tm = pct(c.target_margin, 0);
+  const stats = [
+    [c.profit_per_unit < 0 ? 'stat--bad' : c.margin_pct >= c.target_margin ? 'stat--good' : '', t('checkProfit'), signedMoney(c.profit_per_unit, c.currency), t('checkMarginNote')(pct(c.margin_pct))],
+    ['', t('checkHit'), pct(1 - mc.p_below_target), t('checkSim')],
+    [mc.p_loss > 0.01 ? 'stat--bad' : '', t('checkLoss'), mc.p_loss < 0.0005 ? '< 0.1%' : pct(mc.p_loss), t('checkSim')]
+  ];
+  let verdict;
+  if (c.max_cogs_break_even == null) verdict = esc(t('checkNone'));
+  else {
+    const yours = money(c.cogs_cny, 'CNY');
+    verdict =
+      (c.max_cogs_for_target != null
+        ? t('checkMax')(esc(tm), esc(money(c.max_cogs_for_target, 'CNY')))
+        : esc(t('checkNoTarget')(tm))) +
+      t('checkBE')(esc(money(c.max_cogs_break_even, 'CNY'))) +
+      ' ' +
+      esc(t('checkYours')(yours, c.max_cogs_for_target != null && c.cogs_cny <= c.max_cogs_for_target));
+  }
+  out.innerHTML =
+    `<dl class="check-stats">${stats.map(([cl, l, v, s]) => `<div class="stat ${cl}"><dt>${esc(l)}</dt><dd>${esc(v)}<small>${esc(s)}</small></dd></div>`).join('')}</dl>` +
+    `<p class="check-verdict">${verdict}</p>` +
+    (c.market === 'US' && (c.warnings || []).some((w) => /LOWER BOUND|base duty/i.test(w)) ? `<div class="tip tip--warn">${esc(t('checkUS'))}</div>` : '');
+}
+
+async function runCheck() {
+  if (!state.inputs) return;
+  const seq = recalcSeq;
+  const [chk, eu] = await Promise.all([checkCall(), euCall()]);
+  if (seq !== recalcSeq) return;
+  state.check = chk;
+  state.eu = eu;
+  renderCheck();
+  renderEU();
+}
+const runCheckSoon = debounce(runCheck, 250);
+
+$('check-form').addEventListener('submit', (e) => e.preventDefault());
+$('check-price').addEventListener('input', (e) => {
+  const n = parseFloat(e.target.value);
+  state.checkPrice = n > 0 ? Math.round(n * 100) / 100 : null;
+  state.checkCur = state.result?.waterfall.currency || null;
+  // a typed zero or negative price gets a message; an emptied box just clears the panel
+  state.checkBad = e.target.value.trim() !== '' && !state.checkPrice;
+  if (!state.checkPrice) {
+    state.check = null;
+    renderCheck();
+  }
+  runCheckSoon();
+});
+
+// ------------------------------------------------------------------ 27-country EU comparison
+$('eu-more').addEventListener('click', () => {
+  state.euAll = !state.euAll;
+  renderEU();
+});
+const euCall = () => {
+  if (!isEU(state.inputs.market)) return Promise.resolve(null);
+  const body = { ...payload() };
+  if (state.checkPrice && state.checkPrice <= 150) body.list_price = state.checkPrice;
+  return postJSON('/api/compare-eu', body).then((r) => r, () => null);
+};
+
+// Collapsed: the best few countries plus the seller's own, so the panel stays short.
+const EU_TOP = 6;
+function shownRows(rows) {
+  if (state.euAll) return rows;
+  const top = rows.slice(0, EU_TOP);
+  const here = rows.find((r) => r.market === state.inputs.market);
+  return here && !top.includes(here) ? [...top, here] : top;
+}
+
+function renderEU() {
+  const sec = $('sec-eu');
+  const c = state.eu;
+  if (!c || !state.result || !isEU(state.inputs.market)) {
+    sec.hidden = true;
+    return;
+  }
+  sec.hidden = false;
+  const mine = !!(state.checkPrice && state.checkPrice <= 150);
+  $('eu-hint').textContent = t('euHint')(money(c.list_price, 'EUR'), mine);
+  const dash = t('euDash');
+  const [h1, h2, h3, h4, h5] = t('euTh');
+  const anyPlat = c.rows.some((r) => !r.platform_sold);
+  $('eu-table').innerHTML =
+    `<thead><tr><th>${esc(h1)}</th><th>${esc(h2)}</th><th>${esc(h3)}</th><th>${esc(h4)}</th><th>${esc(h5)}</th></tr></thead><tbody>` +
+    shownRows(c.rows)
+      .map((r) => {
+        const here = r.market === state.inputs.market;
+        const bad = r.profit_at_list != null && r.profit_at_list < 0;
+        return `<tr class="${here ? 'is-here' : ''}"><td><button type="button" data-eu-go="${r.market}">${esc(marketName(r.market, state.lang))}</button>${r.platform_sold ? '' : '<sup>*</sup>'}</td>
+          <td>${pct(r.vat, Math.round(r.vat * 1000) % 10 ? 1 : 0)}</td>
+          <td>${r.target_price != null ? money(r.target_price, 'EUR') : dash}</td>
+          <td class="${bad ? 'is-bad' : ''}">${r.profit_at_list != null ? signedMoney(r.profit_at_list, 'EUR') : dash}</td>
+          <td class="${bad ? 'is-bad' : ''}">${r.margin_at_list != null ? pct(r.margin_at_list) : dash}</td></tr>`;
+      })
+      .join('') +
+    '</tbody>';
+  const more = $('eu-more');
+  more.hidden = c.rows.length <= EU_TOP + 1;
+  more.textContent = state.euAll ? t('euLess') : t('euMore')(c.rows.length);
+  $('eu-note').textContent = t('euNote') + (anyPlat ? ` ${t('euNotePlat')}` : '');
+  $('eu-table').querySelectorAll('[data-eu-go]').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (state.inputs.market === b.dataset.euGo) return;
+      state.inputs.market = b.dataset.euGo;
+      state.euPick = b.dataset.euGo;
+      buildAdjust();
+      recalc();
+    })
+  );
+}
+
 let recalcSeq = 0;
 async function recalc() {
   if (!state.inputs) return;
@@ -906,13 +1135,19 @@ async function recalc() {
   const otherCall =
     postJSON('/api/calc', payload(other)).then((r) => ({ market: other, res: r }), () => ({ market: other, res: null }));
   try {
-    const [res, sw, oth] = await Promise.all([postJSON('/api/calc', payload()), postJSON('/api/sweep', payload()), otherCall]);
+    const curNow = state.inputs.market === 'US' ? 'USD' : 'EUR';
+    if (state.checkCur && state.checkCur !== curNow) state.checkPrice = state.checkCur = state.check = null; // € price is not a $ price
+    const [res, sw, oth, chk, eu] = await Promise.all([postJSON('/api/calc', payload()), postJSON('/api/sweep', payload()), otherCall, checkCall(), euCall()]);
     if (seq !== recalcSeq) return;
     renderPrice(res);
     state.sweep = sw;
     riskCurve($('chart-curve'), sw, { onHover: curveReadout, labels: t('chart') });
     state.compare = oth;
     renderCompare();
+    state.check = chk;
+    state.eu = eu;
+    renderCheck();
+    renderEU();
     refreshFlags();
     logTimeline('lab', `${res.inputs.market} ${money(res.waterfall.price, res.waterfall.currency)}`);
     saveLast();
@@ -1095,13 +1330,19 @@ async function send(text) {
           state.flagAttrs = Object.fromEntries(Object.entries(pending.compliance_flags || {}).filter(([k]) => k !== 'market'));
           renderFlags(r);
         }
-        if (ev.name === 'landed_cost' && r.status === 'abstain') {
+        const pricing = ['landed_cost', 'price_check', 'compare_eu'].includes(ev.name);
+        if (pricing && r.status === 'abstain') {
           hidePrice();
           renderNotice(r.error);
         }
-        if (ev.name === 'landed_cost' && r.waterfall) {
+        if (pricing && (r.waterfall || r.monte_carlo || r.rows)) {
           turn.priced = true;
-          const a = pending.landed_cost || {};
+          const a = pending[ev.name] || {};
+          // "it sells for X" from the chat fills the price-check panel; a compare at the seller's price too
+          if (a.list_price != null && (ev.name === 'price_check' || ev.name === 'compare_eu')) {
+            state.checkPrice = a.list_price;
+            state.checkCur = a.market === 'US' ? 'USD' : 'EUR';
+          }
           state.inputs = {
             market: a.market,
             hs_code: a.hs_code || null,

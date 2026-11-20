@@ -47,6 +47,14 @@ def parse_final(text: str):
 
 
 PRICED_KINDS = ("clean", "bundle", "hs_unknown", "other_product")
+LOWER_BOUND = re.compile(r"lower[- ]bound|floor|minimum|at least|下限|最低|底价|至少", re.I)
+
+
+def lower_bound_ok(value, text: str, truth: float) -> bool:
+    """us_lower_bound: asking passes; so does the engine's exact lower bound, if the answer says it is one."""
+    if not isinstance(value, float):
+        return True
+    return abs(value - truth) / truth <= 0.01 and bool(LOWER_BOUND.search(text or ""))
 
 
 def _retry(fn, *a):
@@ -116,6 +124,8 @@ def main():
         base_text = _retry(run_baseline, c["prompt"])
         row = {"id": c["id"], "kind": c["kind"], "landed": parse_final(landed_text), "baseline": parse_final(base_text),
                "landed_calls": calls, "secs": round(time.time() - t0, 1)}
+        if c["kind"] == "us_lower_bound":
+            row["truth"] = engine.landed_cost(engine.Inputs(**c["truth"]))["waterfall"]["price"]
         if c["kind"] in PRICED_KINDS:
             truth = engine.landed_cost(engine.Inputs(**c["truth"]))["waterfall"]
             row["truth"] = truth["price"]
@@ -132,7 +142,8 @@ def main():
         return isinstance(v, float) and abs(v - truth) / truth <= 0.01
 
     clean = [r for r in rows if r["kind"] in PRICED_KINDS]
-    asky = [r for r in rows if r["kind"] not in PRICED_KINDS]
+    asky = [r for r in rows if r["kind"] not in PRICED_KINDS and r["kind"] != "us_lower_bound"]
+    lower = [r for r in rows if r["kind"] == "us_lower_bound"]
     l_ok = [correct(r["landed"], r["truth"]) for r in clean]
     b_ok = [correct(r["baseline"], r["truth"]) for r in clean]
     b = sum(1 for x, y in zip(l_ok, b_ok) if x and not y)
@@ -182,6 +193,9 @@ def main():
         "emea_cases_underpriced": len(erosion),
         "emea_mean_margin_points_lost": round(sum(margin_gap) / len(margin_gap), 1) if margin_gap else 0.0,
         "baseline_cases_with_negative_margin": sum(1 for r in clean if r.get("baseline_realised_margin", 1) < 0),
+        "n_us_lower_bound": len(lower),
+        "landed_us_lower_bound_ok": sum(lower_bound_ok(r["landed"], r["landed_text"], r["truth"]) for r in lower),
+        "baseline_us_lower_bound_ok": sum(lower_bound_ok(r["baseline"], r["baseline_text"], r["truth"]) for r in lower),
         "by_kind": {
             k: {
                 "n": sum(1 for r in rows if r["kind"] == k),

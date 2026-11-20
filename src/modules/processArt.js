@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { DEMO } from '../data/landed.js';
 import { waterfall } from '../lib/engine.js';
 import { isReducedMotion } from '../lib/a11y.js';
+import { isZh, L, onLang } from '../i18n.js';
 
 // One purpose-drawn, looping illustration per agent-loop step. Each canvas only
 // animates while on screen. Under reduced motion every scene is drawn once at its
@@ -11,7 +12,8 @@ const INK = '#14110F';
 const PAPER = '#FAF6EC';
 const GOLD = '#C9A24B';
 const VERM = '#E8643C';
-const MONO = '"JetBrains Mono", monospace';
+// Language-dependent labels are module state, re-assigned by relabel() on a language switch.
+let MONO = '"JetBrains Mono", monospace';
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const seg = (t, a, b) => clamp01((t - a) / (b - a));
@@ -51,8 +53,8 @@ function pill(ctx, x, y, w, h, r, fill, stroke) {
 }
 
 // I. Describe: the seller's sentence is typed into a chat bubble
-const SENTENCE = ['500 ml blender, built-in battery,', '¥38, 0.6 kg. Price for Germany,', '25% margin?'];
-const SENTENCE_LEN = SENTENCE.join('').length;
+let SENTENCE = [];
+let SENTENCE_LEN = 0;
 
 function drawDescribe(ctx, w, h, t) {
   frame(ctx, w, h);
@@ -100,16 +102,12 @@ function drawDescribe(ctx, w, h, t) {
   ctx.fillText('ENGLISH', 141, 210 - (1 - a) * 8);
   pill(ctx, w - 214, 196 - (1 - a) * 8, 186, 28, 14, 'rgba(232,100,60,0.12)', VERM);
   ctx.fillStyle = VERM;
-  ctx.fillText('PASTED TEXT = DATA, NOT ORDERS', w - 121, 210 - (1 - a) * 8);
+  ctx.fillText(L('PASTED TEXT = DATA, NOT ORDERS', '粘贴内容只当数据，不当指令'), w - 121, 210 - (1 - a) * 8);
   ctx.globalAlpha = 1;
 }
 
 // II. Classify: candidates narrow to one code after the clarifying question
-const CANDIDATES = [
-  { code: '8509.40', note: 'food grinders & mixers', win: true },
-  { code: '8516.79', note: 'electro-thermic, other' },
-  { code: '8509.90', note: 'parts (separate base)' }
-];
+let CANDIDATES = [];
 
 function drawClassify(ctx, w, h, t) {
   frame(ctx, w, h);
@@ -168,7 +166,7 @@ function drawClassify(ctx, w, h, t) {
   ctx.font = `12px ${MONO}`;
   ctx.fillStyle = PAPER;
   ctx.textAlign = 'center';
-  ctx.fillText(t < 3.0 ? 'Is the motor built into the product?' : 'Self-contained motor: yes  →  8509.40', w / 2, 210);
+  ctx.fillText(t < 3.0 ? L('Is the motor built into the product?', '电机是内置在产品里的吗？') : L('Self-contained motor: yes  →  8509.40', '电机内置：是  →  8509.40'), w / 2, 210);
   ctx.globalAlpha = 1;
 }
 
@@ -199,7 +197,7 @@ function drawCompute(ctx, w, h, t) {
     ctx.globalAlpha = 1;
     ctx.font = `9px ${MONO}`;
     ctx.fillStyle = 'rgba(20,17,15,0.7)';
-    ctx.fillText(s.label.replace('Platform fee', 'Fee').replace(/EU €3 × \d/, 'Duty'), x + bw / 2, base + 16);
+    ctx.fillText(isZh() ? ({ cogs: '货值', freight: '运费', duty: '关税', returns: '退货', fee: '佣金', vat: '增值税', margin: '利润' })[s.key] || s.label : s.label.replace('Platform fee', 'Fee').replace(/EU €3 × \d/, 'Duty'), x + bw / 2, base + 16);
     if (grow > 0.95) ctx.fillText(`€${s.value.toFixed(0)}`, x + bw / 2, y0 - hh - 5);
     acc += s.value;
   });
@@ -213,7 +211,7 @@ function drawCompute(ctx, w, h, t) {
   ctx.strokeRect(x, base - WF.price * scale * grow, bw, WF.price * scale * grow);
   ctx.fillStyle = INK;
   ctx.font = `9px ${MONO}`;
-  ctx.fillText('Price', x + bw / 2, base + 16);
+  ctx.fillText(L('Price', '售价'), x + bw / 2, base + 16);
   if (grow > 0.95) {
     ctx.font = `bold 11px ${MONO}`;
     ctx.fillText(`€${WF.price.toFixed(2)}`, x + bw / 2, base - WF.price * scale - 6);
@@ -227,11 +225,11 @@ function drawCompute(ctx, w, h, t) {
   ctx.font = `10px ${MONO}`;
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(20,17,15,0.55)';
-  ctx.fillText('computed by code · no LLM', padL, 20);
+  ctx.fillText(L('computed by code · no LLM', '由代码计算 · 不经过 AI'), padL, 20);
 }
 
 // IV. Localize: a German listing card, then compliance flags pop in around it
-const FLAGS = ['UN 3481', 'PI 967', 'FOOD CONTACT', 'GRI 3(b)'];
+let FLAGS = [];
 
 function drawLocalize(ctx, w, h, t) {
   frame(ctx, w, h);
@@ -294,6 +292,20 @@ function drawLocalize(ctx, w, h, t) {
   ctx.setLineDash([]);
 }
 
+function relabel() {
+  const zh = isZh();
+  MONO = zh ? '"JetBrains Mono", "PingFang SC", "Microsoft YaHei", monospace' : '"JetBrains Mono", monospace';
+  SENTENCE = zh ? ['500ml 榨汁杯，内置电池，', '成本 ¥38，0.6 kg，卖德国，', '想要 25% 毛利，定价多少？'] : ['500 ml blender, built-in battery,', '¥38, 0.6 kg. Price for Germany,', '25% margin?'];
+  SENTENCE_LEN = SENTENCE.join('').length;
+  CANDIDATES = [
+    { code: '8509.40', note: L('food grinders & mixers', '食品研磨机、搅拌机'), win: true },
+    { code: '8516.79', note: L('electro-thermic, other', '其他电热器具') },
+    { code: '8509.90', note: L('parts (separate base)', '零件（底座分开卖）') }
+  ];
+  FLAGS = ['UN 3481', 'PI 967', L('FOOD CONTACT', '食品接触'), 'GRI 3(b)'];
+}
+relabel();
+
 const SCENES = [
   { draw: drawDescribe, len: 6.0, done: 5 },
   { draw: drawClassify, len: 6.0, done: 4.5 },
@@ -304,6 +316,15 @@ const SCENES = [
 export function initProcessArt() {
   const canvases = document.querySelectorAll('.process-art-canvas');
   const reduced = isReducedMotion();
+  const redraws = [];
+  // Language switch: new labels; scenes not animating right now are redrawn at their final frame
+  // (on-screen ones pick the labels up on their next frame).
+  onLang({
+    apply: () => {
+      relabel();
+      redraws.forEach((fn) => fn());
+    }
+  });
 
   canvases.forEach((canvas, idx) => {
     const scene = SCENES[idx];
@@ -314,10 +335,12 @@ export function initProcessArt() {
 
     if (reduced) {
       scene.draw(ctx, w, h, scene.done);
+      redraws.push(() => scene.draw(ctx, w, h, scene.done));
       return;
     }
 
     let visible = false;
+    redraws.push(() => visible || scene.draw(ctx, w, h, scene.done));
     let start = 0;
     new IntersectionObserver((entries) => {
       const now = entries[0]?.isIntersecting ?? false;

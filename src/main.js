@@ -2,6 +2,10 @@ import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';
 import '@fontsource-variable/instrument-sans';
 import '@fontsource/jetbrains-mono/400.css';
+// Chinese serif for headings, self-hosted (works on the mainland). Split by unicode-range, so a page only
+// downloads the glyph chunks it uses, and an English visitor downloads none.
+import '@fontsource/noto-serif-sc/400.css';
+import '@fontsource/noto-serif-sc/600.css';
 
 import './styles/tokens.css';
 import './styles/base.css';
@@ -23,6 +27,7 @@ import './styles/cursor.css';
 import './styles/debug.css';
 import './styles/responsive.css';
 import './styles/a11y.css';
+import './styles/zh.css';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -37,6 +42,8 @@ import { Flip } from 'gsap/Flip';
 import Lenis from 'lenis';
 
 import { CONFIG, applyConfigToDOM } from './config.js';
+import { applyStaticI18n } from './i18n.js';
+import { initLangSwitch, showLangSwitch } from './lib/langTransition.js';
 import { isReducedMotion, initA11y } from './lib/a11y.js';
 import { initSquircles } from './lib/squircle.js';
 import { initLiquidGlass } from './lib/liquidGlass.js';
@@ -69,6 +76,7 @@ export function onFrame(fn) {
 async function boot() {
   document.documentElement.classList.remove('no-js');
   applyConfigToDOM(CONFIG);
+  applyStaticI18n(); // before any module builds text, so everything is created in the page language
   initA11y();
 
   const preloader = initPreloader();
@@ -166,6 +174,7 @@ async function boot() {
   consoleMod.initConsole();
   moatMod.initMoat();
   initGlobalParallax();
+  initLangSwitch({ lenis }); // every module has registered its language hook by now
 
   preloader.setProgress(1.0);
   await preloader.complete(() => {
@@ -183,6 +192,7 @@ async function boot() {
     });
   }
   ScrollTrigger.refresh();
+  showLangSwitch();
   window.addEventListener('orientationchange', () => {
     setTimeout(() => ScrollTrigger.refresh(), 250);
   });

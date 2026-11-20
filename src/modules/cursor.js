@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 import { isReducedMotion, isTouchDevice } from '../lib/a11y.js';
+import { isZh, L } from '../i18n.js';
 
 export function initCursor() {
   const cursor = document.getElementById('custom-cursor');
@@ -23,7 +24,8 @@ export function initCursor() {
 
   document.querySelectorAll('[data-cursor]').forEach((target) => {
     target.addEventListener('pointerenter', () => {
-      const text = target.getAttribute('data-cursor') || 'OPEN';
+      const raw = target.getAttribute('data-cursor') || 'OPEN';
+      const text = isZh() ? ({ OPEN: '打开', DRAG: '拖动', LENS: '放大' })[raw] || raw : raw;
       if (labelEl) labelEl.textContent = text;
       cursor.classList.add('is-labeled');
     });

@@ -1,0 +1,322 @@
+/* ==========================================================================
+   Chinese page: typography and layout calibrated for Chinese readers.
+   Everything here is scoped to :root[data-lang="zh"] (set before first paint by the
+   inline script in index.html), so the English page is untouched.
+
+   The Latin design leans on devices that do not carry over to Chinese:
+   - italics      → Chinese has no italic; emphasis is colour (and the hero gradient)
+   - ALL CAPS     → meaningless for hanzi; labels become short Chinese words, lightly tracked
+   - tight 0.92 leading on 9rem display type → hanzi are square and dense; they need ~1.2
+     leading and smaller sizes to read as the same visual weight
+   - wide mono tracking (0.16em) → reads as broken spacing in Chinese
+   Body copy gets the 1.8+ leading and slight tracking Chinese text needs, strict line
+   breaking (no 。，、 at the start of a line), and inter-character justification.
+   ========================================================================== */
+
+:root[data-lang="zh"] {
+  --zh-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  --zh-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --text-display: clamp(2.5rem, 6.2vw, 5.8rem);
+  --text-h2: clamp(1.85rem, 4vw, 3.6rem);
+  --text-h3: clamp(1.35rem, 2vw, 1.8rem);
+  --text-body: clamp(1rem, 1.05vw, 1.075rem);
+}
+
+/* ---------- base text ---------- */
+:root[data-lang="zh"] body {
+  font-family: "Instrument Sans Variable", var(--zh-sans);
+  line-break: strict;           /* 禁则: no closing punctuation at a line start */
+  word-break: normal;
+  overflow-wrap: break-word;
+  font-feature-settings: "palt" 0;
+}
+
+:root[data-lang="zh"] p,
+:root[data-lang="zh"] li {
+  line-height: 1.85;
+  letter-spacing: 0.02em;
+}
+
+:root[data-lang="zh"] .hero__sub,
+:root[data-lang="zh"] .section-lede,
+:root[data-lang="zh"] .process-panel__copy,
+:root[data-lang="zh"] .moat-card p,
+:root[data-lang="zh"] .cta__sub {
+  text-align: justify;
+  text-justify: inter-character;
+  max-width: 38em;              /* ~36-40 hanzi per line: the comfortable Chinese measure */
+}
+:root[data-lang="zh"] .hero__sub b,
+:root[data-lang="zh"] .section-lede b,
+:root[data-lang="zh"] .moat-card p b {
+  font-weight: 600;
+  color: inherit;
+}
+
+/* ---------- headings ---------- */
+:root[data-lang="zh"] .display-title,
+:root[data-lang="zh"] .section-title,
+:root[data-lang="zh"] .moat-card__title,
+:root[data-lang="zh"] .process-panel__title {
+  font-family: var(--zh-serif);
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+/* Break headings only at phrase boundaries (the <wbr> in i18n/zh.js) and at punctuation, never
+   inside a word (榨汁 / 杯). overflow-wrap is the safety net if a phrase is wider than a phone. */
+:root[data-lang="zh"] .display-title,
+:root[data-lang="zh"] .section-title,
+:root[data-lang="zh"] .moat-card__title,
+:root[data-lang="zh"] .process-panel__title {
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+:root[data-lang="zh"] .nw { white-space: nowrap; }
+/* The mirrored decorative line reads as a rendering bug in Chinese */
+:root[data-lang="zh"] .footer__mirror { display: none; }
+:root[data-lang="zh"] .display-title { line-height: 1.22; }
+:root[data-lang="zh"] .section-title { line-height: 1.32; }
+:root[data-lang="zh"] .moat-card__title { line-height: 1.4; font-size: var(--text-h3); }
+:root[data-lang="zh"] .process-panel__title { font-size: 1.75rem; line-height: 1.3; }
+
+/* Emphasis: colour, not slant */
+:root[data-lang="zh"] .zh-em {
+  font-style: normal;
+  color: var(--vermilion);
+}
+:root[data-lang="zh"] .hero .zh-em,
+:root[data-lang="zh"] .showreel .zh-em {
+  background: linear-gradient(135deg, var(--vermilion) 15%, var(--gold) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- labels that were ALL CAPS mono ---------- */
+:root[data-lang="zh"] .eyebrow,
+:root[data-lang="zh"] .marginalia,
+:root[data-lang="zh"] .folio-num,
+:root[data-lang="zh"] .footer__col-title,
+:root[data-lang="zh"] .build-tag,
+:root[data-lang="zh"] .stat-box__label,
+:root[data-lang="zh"] .preloader__label,
+:root[data-lang="zh"] .canvas-hint span,
+:root[data-lang="zh"] .canvas-card__meta,
+:root[data-lang="zh"] .collab-cursor__tag,
+:root[data-lang="zh"] .prov-pill,
+:root[data-lang="zh"] .mobile-menu-btn__label,
+:root[data-lang="zh"] .footer__status,
+:root[data-lang="zh"] .hero__meta,
+:root[data-lang="zh"] .showreel__hud,
+:root[data-lang="zh"] .custom-cursor__bubble,
+:root[data-lang="zh"] .cc-panel__title {
+  font-family: var(--zh-sans);
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+:root[data-lang="zh"] .eyebrow { font-size: 13px; font-weight: 500; }
+:root[data-lang="zh"] .marginalia,
+:root[data-lang="zh"] .folio-num { font-size: 12px; }
+:root[data-lang="zh"] .stat-box__label { line-height: 1.6; letter-spacing: 0.03em; }
+:root[data-lang="zh"] .build-tag { font-size: 12px; padding: 3px 10px; }
+
+/* Section folios become 壹 贰 叁: a Chinese ordinal set in the serif, not a Roman numeral */
+:root[data-lang="zh"] .folio-tag {
+  font-family: var(--zh-serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: none;
+}
+
+/* ---------- header ---------- */
+:root[data-lang="zh"] .header-nav__link {
+  font-family: var(--zh-sans);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  min-width: 44px;              /* two-character labels are narrower than 44px; a11y.css sets the height */
+  justify-content: center;
+}
+:root[data-lang="zh"] .header-nav__link:hover em {
+  font-family: var(--zh-sans);
+  font-style: normal;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+:root[data-lang="zh"] .mobile-sheet__link {
+  font-family: var(--zh-serif);
+  letter-spacing: 0.06em;
+}
+
+/* ---------- buttons ---------- */
+:root[data-lang="zh"] .btn,
+:root[data-lang="zh"] .link-underline,
+:root[data-lang="zh"] .sample-chip,
+:root[data-lang="zh"] .cc-reset {
+  font-family: var(--zh-sans);
+  letter-spacing: 0.06em;
+}
+:root[data-lang="zh"] .btn { font-weight: 600; }
+
+/* ---------- hero selling points (zh only) ---------- */
+.hero__points {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  color: rgba(243, 237, 224, 0.86);
+  font-size: 0.95rem;
+}
+.hero__points li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+.hero__points li::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.5 7.2 6 9.6 10.6 4.6' fill='none' stroke='%2314110F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat,
+    var(--gold);
+}
+:root:not([data-lang="zh"]) [data-only="zh"] { display: none !important; }
+:root[data-lang="zh"] [data-only="en"] { display: none !important; }
+
+/* ---------- marquees ---------- */
+:root[data-lang="zh"] .marquee-item {
+  font-family: var(--zh-serif);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 3.6vw, 3.4rem);
+  letter-spacing: 0.06em;
+}
+:root[data-lang="zh"] .marquee-ital { font-style: normal; }
+
+/* ---------- figures, cards, cost card ---------- */
+:root[data-lang="zh"] .figure-caption {
+  font-family: var(--zh-sans);
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+}
+:root[data-lang="zh"] .cc-prompt { line-height: 1.8; letter-spacing: 0.02em; }
+:root[data-lang="zh"] .cc-kpi__lbl { letter-spacing: 0.03em; text-transform: none; }
+:root[data-lang="zh"] .cc-toggle,
+:root[data-lang="zh"] .cc-bundle,
+:root[data-lang="zh"] .cc-disclaimer,
+:root[data-lang="zh"] .prov-text { line-height: 1.75; }
+:root[data-lang="zh"] .wf-lbl,
+:root[data-lang="zh"] .flow-label { letter-spacing: 0.04em; text-transform: none; }
+:root[data-lang="zh"] .evidence-list__claim { line-height: 1.8; }
+
+/* ---------- manifesto: must match getFontSpec() in modules/manifesto.js exactly ---------- */
+:root[data-lang="zh"] .manifesto__line {
+  font-family: "Noto Serif SC";
+  font-size: 26px;
+  line-height: 46px;
+  letter-spacing: 0;
+}
+@media (max-width: 767px) {
+  :root[data-lang="zh"] .manifesto__line {
+    font-size: 18px;
+    line-height: 32px;
+  }
+}
+:root[data-lang="zh"] .manifesto__sr-text { line-height: 1.9; }
+
+/* ---------- footer ---------- */
+:root[data-lang="zh"] .footer__wordmark {
+  font-family: var(--zh-serif);
+  font-weight: 600;
+  font-size: clamp(5rem, 24vw, 19rem);
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+:root[data-lang="zh"] .footer__col a,
+:root[data-lang="zh"] .footer__col span { line-height: 1.7; letter-spacing: 0.03em; }
+
+/* ==========================================================================
+   Floating language switch (both languages). Bottom-right, clear of the safe area.
+   The base is near-opaque cream so both labels keep AA contrast over the dark hero,
+   CTA and footer as well as the light sections. Each button is a 44 × 44 target.
+   ========================================================================== */
+.lang-fab {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: calc(var(--z-header) + 1);
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(243, 237, 224, 0.94);
+  color: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out), visibility 0s linear 0.5s;
+}
+/* shown once the preloader has gone (main.js adds .is-ready) */
+.lang-fab.is-ready {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out), visibility 0s;
+}
+/* stepping aside while a form control passes under it (langTransition.js) */
+.lang-fab.is-ready.is-dodging:not(:focus-within) {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out), visibility 0s linear 0.3s;
+}
+.lang-fab__btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 500 14px/1 "Instrument Sans Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.lang-fab__btn:hover { background: rgba(20, 17, 15, 0.08); }
+.lang-fab__btn[aria-pressed="true"] { background: var(--ink); color: var(--cream); cursor: default; }
+.lang-fab__btn:focus-visible { outline: 2px solid var(--vermilion); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(243, 237, 224, 0.9); }
+.lang-fab[aria-busy="true"] .lang-fab__btn { cursor: progress; }
+@media (forced-colors: active) {
+  .lang-fab { border: 1px solid CanvasText; }
+  .lang-fab__btn[aria-pressed="true"] { outline: 2px solid Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lang-fab, .lang-fab.is-ready { transition: none; transform: none; }
+}
+
+/* Moat card 04 is live in the Chinese copy (已上线): colour its tag as built */
+:root[data-lang="zh"] [data-i18n="m4.tag"] { color: #146c3c; opacity: 1; }
+
+/* Phones: inter-character justification stretches lines that hold numbers or Latin words
+   (2 0 2 5 年 8 月); Chinese mobile pages align left at this measure. */
+@media (max-width: 767px) {
+  :root[data-lang="zh"] .hero__sub,
+  :root[data-lang="zh"] .section-lede,
+  :root[data-lang="zh"] .process-panel__copy,
+  :root[data-lang="zh"] .moat-card p,
+  :root[data-lang="zh"] .cta__sub {
+    text-align: left;
+  }
+}

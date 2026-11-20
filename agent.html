@@ -105,6 +105,23 @@
           </details>
         </section>
 
+        <section class="panel" id="sec-check" hidden>
+          <div class="panel__head"><h2 data-i18n="checkTitle"></h2><span class="panel__hint" data-i18n="checkHint"></span></div>
+          <form class="check-form" id="check-form" autocomplete="off">
+            <label class="field"><span data-i18n="checkLabel"></span><span class="field__box">
+              <input type="number" inputmode="decimal" id="check-price" step="0.01" min="0.01" />
+              <span class="field__u" id="check-cur">€</span></span></label>
+          </form>
+          <div id="check-out" aria-live="polite"></div>
+        </section>
+
+        <section class="panel" id="sec-eu" hidden>
+          <div class="panel__head"><h2 data-i18n="euTitle"></h2><span class="panel__hint" id="eu-hint"></span></div>
+          <div class="eu-wrap"><table class="eu-table" id="eu-table"></table></div>
+          <button type="button" class="btn btn--quiet eu-more" id="eu-more" hidden></button>
+          <p class="eu-note" id="eu-note"></p>
+        </section>
+
         <section class="panel" id="sec-flags" hidden>
           <div class="panel__head"><h2 data-i18n="flagsTitle"></h2><span class="panel__hint" id="flags-hint"></span></div>
           <ul class="flags" id="flags"></ul>

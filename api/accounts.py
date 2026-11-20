@@ -21,7 +21,8 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field, field_validator
 
 from landed.markets import EU_COUNTRIES
-from landed import profile as pm
+from landed import engine, profile as pm
+from landed import platforms as platforms_mod
 
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = Path(os.environ.get("LANDED_DB", ROOT / "db" / "landed.sqlite3"))
@@ -319,6 +320,76 @@ def add_product(body: ProductIn, request: Request):
             (user["id"], body.name.strip(), raw, time.time()),
         )
     return {"id": cur.lastrowid}
+
+
+class ProductUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    data: dict
+
+
+@router.put("/products/{product_id}")
+def update_product(product_id: int, body: ProductUpdate, request: Request):
+    """Replace a saved product's data (re-baseline to today's price, or keep a new market price)."""
+    user = require_user(request)
+    raw = _validate_product_data(body.data)
+    with db() as con:
+        cur = con.execute(
+            "UPDATE products SET data = ?, name = COALESCE(?, name) WHERE id = ? AND user_id = ?",
+            (raw, body.name.strip() if body.name else None, product_id, user["id"]),
+        )
+    if cur.rowcount == 0:
+        raise HTTPException(404, "No such product")
+    return {"ok": True}
+
+
+def calc_of(data: dict, profile: dict) -> dict:
+    """The /api/calc body a saved product was priced with. Products saved before `calc` was stored
+    are rebuilt from their inputs and overrides the way the page builds it (see payload() in main.js)."""
+    if isinstance(data.get("calc"), dict):
+        return data["calc"]
+    p = {**(data.get("inputs") if isinstance(data.get("inputs"), dict) else {}),
+         **(data.get("overrides") if isinstance(data.get("overrides"), dict) else {})}
+    if p.get("market") == "US":
+        p["item_categories"] = 1
+        if not p.get("hs_code"):
+            p["indicative"] = True
+    else:
+        p.pop("indicative", None)
+        p.pop("hs_assumed", None)
+    if not p.get("hs_code"):
+        p.pop("hs_code", None)
+    plat = profile.get("platform")
+    if p.get("fee_rate") is None and plat and p.get("market") in platforms_mod.available_markets(plat):
+        p["platform"] = plat
+    if profile.get("category"):
+        p["fee_category"] = profile["category"]
+    return p
+
+
+@router.get("/products/review")
+def review_products(request: Request):
+    """Every saved product re-priced against today's rates, with what changed since it was saved."""
+    user = require_user(request)
+    profile = json.loads(user["profile"] or "{}")
+    with db() as con:
+        rows = con.execute("SELECT * FROM products WHERE user_id = ? ORDER BY created_at DESC", (user["id"],)).fetchall()
+    out = []
+    for r in rows:
+        try:
+            data = json.loads(r["data"])
+        except ValueError:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        check = data.get("check") if isinstance(data.get("check"), dict) else {}
+        try:  # one malformed product must never break the review of the others
+            calc = calc_of(data, profile)
+            rev = engine.review_saved(calc, data.get("baseline") if isinstance(data.get("baseline"), dict) else None,
+                                      check.get("price"))
+        except Exception as e:  # noqa: BLE001
+            calc, rev = None, {"status": "error", "error": type(e).__name__}
+        out.append({"id": r["id"], "name": r["name"], "calc": calc if isinstance(calc, dict) else None, **rev})
+    return {"reviews": out}
 
 
 @router.delete("/products/{product_id}")

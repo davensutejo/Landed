@@ -15,6 +15,26 @@ ATTR_PROPS = {
 
 ASK_FIELDS = ["cogs_cny", "weight_kg", "market", "target_margin", "item_categories", "battery_builtin", "food_contact"]
 
+# Inputs shared by every pricing tool.
+_COST_PROPS = {
+    "market": {"type": "string", "enum": sorted(engine.MARKETS)},
+    "hs_code": {"type": "string", "description": "6-digit HS code like 8509.40, only if the seller gave or confirmed it. Required for US."},
+    "cogs_cny": {"type": "number", "description": "Unit cost in CNY"},
+    "weight_kg": {"type": "number"},
+    "target_margin": {"type": "number", "description": "e.g. 0.25 for 25%"},
+    "item_categories": {
+        "type": "integer",
+        "description": (
+            "Number of DIFFERENT kinds of goods in one parcel (5 pairs of the same socks = 1; "
+            "blender + spare cup = 2). Default 1 for a single product."
+        ),
+    },
+    "fee_rate": {"type": "number", "description": "Seller's own platform fee rate, if given"},
+    "freight_cny_per_kg": {"type": "number", "description": "Seller's own freight quote, if given"},
+    "return_rate": {"type": "number", "description": "Seller's own return rate, if given"},
+    "fx": {"type": "number", "description": "Seller's own FX rate (CNY per unit of destination currency), if given"},
+}
+
 TOOLS = [
     {
         "type": "function",
@@ -61,23 +81,47 @@ TOOLS = [
             ),
             "parameters": {
                 "type": "object",
+                "properties": _COST_PROPS,
+                "required": ["market", "cogs_cny", "weight_kg"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "price_check",
+            "description": (
+                "The reverse question: the seller names a selling price (their listing, a competitor's, or what the "
+                "product sells for on a platform) and asks if it makes money. Returns profit and margin at that price, "
+                "the chance of hitting the target margin and of a loss (5,000-path Monte Carlo), and the most the "
+                "seller can pay per unit (CNY) to keep the target margin or to break even. Needs the same four inputs "
+                "as landed_cost plus list_price. Never compute these yourself."
+            ),
+            "parameters": {
+                "type": "object",
                 "properties": {
-                    "market": {"type": "string", "enum": sorted(engine.MARKETS)},
-                    "hs_code": {"type": "string", "description": "6-digit HS code like 8509.40, only if the seller gave or confirmed it. Required for US."},
-                    "cogs_cny": {"type": "number", "description": "Unit cost in CNY"},
-                    "weight_kg": {"type": "number"},
-                    "target_margin": {"type": "number", "description": "e.g. 0.25 for 25%"},
-                    "item_categories": {
-                        "type": "integer",
-                        "description": (
-                            "Number of DIFFERENT kinds of goods in one parcel (5 pairs of the same socks = 1; "
-                            "blender + spare cup = 2). Default 1 for a single product."
-                        ),
-                    },
-                    "fee_rate": {"type": "number", "description": "Seller's own platform fee rate, if given"},
-                    "freight_cny_per_kg": {"type": "number", "description": "Seller's own freight quote, if given"},
-                    "return_rate": {"type": "number", "description": "Seller's own return rate, if given"},
-                    "fx": {"type": "number", "description": "Seller's own FX rate (CNY per unit of destination currency), if given"},
+                    "list_price": {"type": "number", "description": "The selling price the seller stated, in the destination currency (VAT included for EU)"},
+                    **_COST_PROPS,
+                },
+                "required": ["market", "cogs_cny", "weight_kg", "list_price"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "compare_eu",
+            "description": (
+                "Same product in all 27 EU countries: the price that hits the target margin in each, and the profit "
+                "per unit in each at one shared list price (the seller's stated price if given, otherwise the target "
+                "price in `market`), ranked best first. Use when the seller asks which EU country to sell in or to "
+                "compare EU countries. `market` is the seller's own EU country (Germany if they said only EU)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "list_price": {"type": "number", "description": "Optional: one selling price in EUR the seller stated"},
+                    **_COST_PROPS,
                 },
                 "required": ["market", "cogs_cny", "weight_kg"],
             },
@@ -205,6 +249,90 @@ def _compact_cost(res: dict) -> dict:
     return out
 
 
+_SYM = {"EUR": "€", "USD": "$"}
+_pc = lambda v: f"{v * 100:.1f}%"  # noqa: E731
+
+
+def _signed(v: float, cur: str) -> str:
+    return f"-{_SYM.get(cur, '')}{-v:.2f}" if v < 0 else f"{_SYM.get(cur, '')}{v:.2f}"
+
+
+def _compact_check(r: dict) -> dict:
+    """price_check result with pre-formatted strings the model copies (see _compact_cost)."""
+    out = json.loads(json.dumps(r))
+    mc, cur = out["monte_carlo"], out["currency"]
+    tgt, brk = out["max_cogs_for_target"], out["max_cogs_break_even"]
+    if brk is None:
+        verdict = "loss_at_any_cost"
+    elif out["margin_pct"] >= out["target_margin"]:
+        verdict = "meets_target"
+    elif out["profit_per_unit"] > 0:
+        verdict = "profitable_below_target"
+    else:
+        verdict = "loss"
+    out["display"] = {
+        "list_price": _signed(out["list_price"], cur),
+        "profit_per_unit": _signed(out["profit_per_unit"], cur),
+        "margin": _pc(out["margin_pct"]),
+        "target_margin": _pc(out["target_margin"]),
+        "chance_hit_target": _pc(1 - mc["p_below_target"]),
+        "chance_of_loss": "< 0.1%" if mc["p_loss"] < 0.0005 else _pc(mc["p_loss"]),
+        "seller_unit_cost": f"¥{out['cogs_cny']:.2f}",
+        "max_unit_cost_for_target": f"¥{tgt:.2f}" if tgt is not None else None,
+        "max_unit_cost_break_even": f"¥{brk:.2f}" if brk is not None else None,
+        "target_price": _signed(out["target_price"], cur),
+        "verdict": verdict,
+        "us_profit_is_upper_bound": out["market"] == "US" and any(
+            "LOWER BOUND" in w or "base duty" in w for w in out.get("warnings", [])),
+        "instruction": (
+            "Quote figures exactly as written here. Lead with the verdict in plain words, then the most the seller can "
+            "pay per unit, then target_price as the price that hits their margin. If us_profit_is_upper_bound, say the "
+            "real profit is lower because part of the US duty is not loaded."
+        ),
+    }
+    return out
+
+
+def _compact_compare(r: dict) -> dict:
+    """compare_eu result for the model: the best three, the worst, and the reference country (`market`), pre-formatted."""
+    from .markets import EU_COUNTRIES
+
+    rows = r["rows"]
+
+    def line(row: dict) -> str:
+        en, zh, _ = EU_COUNTRIES[row["market"]]
+        if row["profit_at_list"] is None:
+            return f"{en} ({zh}): above the EUR 150 flat-duty ceiling, not priced"
+        return (f"{en} ({zh}): profit {_signed(row['profit_at_list'], 'EUR')} per unit ({_pc(row['margin_at_list'])}), "
+                f"VAT {row['vat'] * 100:g}%, target price {_signed(row['target_price'], 'EUR') if row['target_price'] else 'n/a'}")
+
+    own = next((x for x in rows if x["market"] == r["market"]), None)
+    return {
+        "list_price": f"€{r['list_price']:.2f}",
+        "target_margin": _pc(r["target_margin"]),
+        "countries": len(rows),
+        "best": [line(x) for x in rows[:3]],
+        "worst": line(rows[-1]),
+        "reference_country": line(own) if own else None,  # `market`: the seller's country only if they said so
+        # every country, ranked: a seller who names three countries gets each one's own figures, never a copy
+        "all_countries_ranked": [f"{i}. {line(x)}" for i, x in enumerate(rows, 1)],
+        "platform_not_sold_in": [EU_COUNTRIES[x["market"]][0] for x in rows if not x["platform_sold"]],
+        "why_they_differ": "Only VAT (and the platform fee where the platform is not sold) differs; the EUR 3 duty and freight are EU-wide.",
+        "instruction": (
+            "Quote figures exactly as written. If the seller named specific countries, compare exactly those, each "
+            "with its own line from all_countries_ranked (never assume two countries are the same). Otherwise say the "
+            "best country and how much more it makes per unit than reference_country, and mention the worst. "
+            "Point to the full 27-country table in the workspace."
+        ),
+    }
+
+
+_PRICING_ARGS = {
+    "market", "hs_code", "cogs_cny", "weight_kg", "target_margin", "item_categories", "fee_rate", "freight_cny_per_kg",
+    "return_rate", "fx", "platform", "fee_category", "indicative", "hs_assumed",
+}
+
+
 def dispatch(name: str, args: dict) -> tuple[dict, dict]:
     """Run a whitelisted tool. Returns (result_for_llm, result_for_ui)."""
     try:
@@ -231,6 +359,16 @@ def dispatch(name: str, args: dict) -> tuple[dict, dict]:
             kwargs = {k: v for k, v in args.items() if k in allowed and v is not None}
             res = engine.landed_cost(engine.Inputs(**kwargs))
             return _compact_cost(res), res
+        if name in ("price_check", "compare_eu"):
+            kwargs = {k: v for k, v in args.items() if k in _PRICING_ARGS and v is not None}
+            lp = args.get("list_price")
+            if name == "price_check":
+                if lp is None:
+                    raise engine.EngineError("price_check needs the selling price the seller stated (list_price)")
+                res = engine.price_check(engine.Inputs(**kwargs), lp)
+                return _compact_check(res), res
+            res = engine.compare_eu(engine.Inputs(**kwargs), lp)
+            return _compact_compare(res), res
         if name == "ask_seller":
             fields = [f for f in (args.get("fields") or []) if f in ASK_FIELDS]
             prefill = {k: v for k, v in (args.get("prefill") or {}).items() if k in ASK_FIELDS}

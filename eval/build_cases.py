@@ -73,11 +73,19 @@ ASK = [
     ("x01", "above_150", "Electric scooter, ¥900, 14 kg. What should I charge in Germany for 25% margin? " + ASSUME_STD),
     ("x02", "above_150", "Commercial blender for restaurants, ¥800, 6 kg. Germany price for a 25% margin? " + ASSUME_STD),
     ("u01", "us_needs_hs", "Portable blender, ¥38, 0.6 kg. What should I charge in the US for a 25% margin? Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD."),
-    ("u02", "us_needs_hs", "Cotton socks 5-pack, ¥12, 0.25 kg. US price for a 25% margin? Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD."),
     ("o02", "out_of_scope", "Portable blender (motor built in, no heating, household, HS 8509.40 confirmed), ¥38, 0.6 kg. What should I charge in Brazil for 25% margin?"),
 ]
 
 PRICED_KINDS = ("clean", "bundle", "hs_unknown", "other_product")
+
+# A US product with no HS line loaded: by design (system prompt rule 4) Landed gives a LOWER-BOUND price, labelled
+# as such, with the 12.5% China Section 301 duty in and the line's base duty out. It passes if it asks, or if it
+# gives exactly the engine's lower bound and says it is a lower bound. A bare unlabelled number fails.
+US_LOWER_BOUND = [
+    ("u02", "Cotton socks 5-pack, ¥12, 0.25 kg. US price for a 25% margin? Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD.",
+     dict(market="US", cogs_cny=12, weight_kg=0.25, target_margin=0.25, fee_rate=0.15, freight_cny_per_kg=45,
+          return_rate=0.08, fx=7.10, indicative=True)),
+]
 
 
 def main():
@@ -105,12 +113,15 @@ def main():
         cases.append({"id": cid, "kind": kind, "prompt": prompt + " " + ASSUME_STD, "truth": truth})
     for cid, kind, prompt in ASK:
         cases.append({"id": cid, "kind": kind, "prompt": prompt, "expect": "ask"})
+    for cid, prompt, truth in US_LOWER_BOUND:
+        cases.append({"id": cid, "kind": "us_lower_bound", "prompt": prompt, "truth": truth, "expect": "ask_or_labelled_lower_bound"})
 
     out = {
         "note": (
             "36 cases. Priced (26): 15 clean, 3 bundle (EUR 3-per-category rule not spelled out), 5 Germany with an "
-            "unknown or ambiguous HS code, 3 non-blender products. Must not guess (10): 5 missing inputs, 2 above "
-            "EUR 150, 2 US without a confirmed code, 1 unsupported market. Priced cases state all commercial "
+            "unknown or ambiguous HS code, 3 non-blender products. Must not guess (9): 5 missing inputs, 2 above "
+            "EUR 150, 1 US blender without a confirmed code, 1 unsupported market. US lower bound (1): socks with no "
+            "HTS line loaded, where a labelled lower-bound price or a question both pass. Priced cases state all commercial "
             "assumptions so the baseline is not penalised for unknown demo values. Ground truth = sourced rules "
             "applied by landed.engine."
         ),

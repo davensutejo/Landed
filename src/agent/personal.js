@@ -9,6 +9,7 @@ import { createOnboarding, nicheInfo, NICHE_LIST, catLabel, nicheLabel, platform
 const KEY = 'landed-profile';
 const OWN_KEYS = ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx'];
 import { marketName } from '../lib/markets.js';
+import { money, pct } from './charts.js';
 
 const P = {
   zh: {
@@ -27,6 +28,22 @@ const P = {
     withGift: (name) => `${name}，搭配一个赠品`,
     edit: '修改',
     savedTitle: '我保存的产品',
+    savedHint: '每次打开都按今天的汇率和税率重新核算',
+    stUnchanged: '无变化',
+    stChanged: '有变化',
+    stNoBase: '未记录基准',
+    stStop: '无法计算',
+    rvSame: (p, m, loss) => `按今天的汇率和税率复核：原价 ${p} 仍是 ${m} 毛利 · 亏损概率 ${loss}`,
+    rvMoved: (what) => `自保存以来：${what}。`,
+    rvMargin: (p, a, b) => `按原价 ${p}，毛利 ${a} → <b>${b}</b>`,
+    rvNewPrice: (p, m) => `；要回到 ${m} 毛利，建议售价改为 <b>${p}</b>。`,
+    rvNoBase: (p) => `当前建议售价 ${p}。这是旧版保存的产品，没有记录当时的数据；点「更新」开始跟踪。`,
+    rvStop: '按现在的数据不能给出价格，请打开查看原因。',
+    rvCheck: (p, profit, m) => `对标价 ${p}：每件利润 ${profit}（${m}）`,
+    update: '更新为今天的价格',
+    updated: '已更新',
+    changedToast: (n) => `${n} 个已保存产品的成本有变化，请在欢迎页查看。`,
+    rateNames: { fx_cny_per_eur: '欧元汇率', fx_cny_per_usd: '美元汇率', fx_horizon_sd: '汇率波动', vat_standard: '增值税', eu_flat_duty_per_category: '欧盟统一关税', platform_fee: '平台佣金', platform_fee_fixed: '平台每单固定费', freight_cny_per_kg: '头程运费', return_alpha: '退货率', return_beta: '退货率' },
     open: '打开',
     remove: '删除',
     saveProduct: '保存这个产品',
@@ -72,6 +89,22 @@ const P = {
     withGift: (name) => `${name} with a free gift`,
     edit: 'Edit',
     savedTitle: 'My saved products',
+    savedHint: 'Re-priced against today’s rates every time you open Landed',
+    stUnchanged: 'No change',
+    stChanged: 'Changed',
+    stNoBase: 'No baseline',
+    stStop: 'Can’t price',
+    rvSame: (p, m, loss) => `Checked against today’s rates: ${p} still makes a ${m} margin · chance of a loss ${loss}`,
+    rvMoved: (what) => `Since you saved it: ${what}.`,
+    rvMargin: (p, a, b) => `At your price of ${p}, margin ${a} → <b>${b}</b>`,
+    rvNewPrice: (p, m) => `; to get back to ${m}, charge <b>${p}</b>.`,
+    rvNoBase: (p) => `Recommended price now ${p}. Saved before Landed kept a baseline; click “Update” to start tracking it.`,
+    rvStop: 'With today’s data Landed can’t give a price. Open it to see why.',
+    rvCheck: (p, profit, m) => `Market price ${p}: profit ${profit} per unit (${m})`,
+    update: 'Update to today’s price',
+    updated: 'Updated',
+    changedToast: (n) => `Costs changed for ${n} saved product${n > 1 ? 's' : ''}. See the welcome screen.`,
+    rateNames: {},
     open: 'Open',
     remove: 'Delete',
     saveProduct: 'Save this product',
@@ -125,6 +158,8 @@ export function createPersonal(h) {
   let local = readLocal(); // { profile, skipped }
   let user = null;
   let products = [];
+  let reviews = {}; // product id -> /api/products/review row
+  let notified = false;
   let afterLogin = null;
   let authMode = 'login';
 
@@ -170,6 +205,70 @@ export function createPersonal(h) {
       products = (await fetch('/api/products').then((r) => r.json())).products || [];
     } catch {
       products = [];
+    }
+    try {
+      const list = products.length ? (await fetch('/api/products/review').then((r) => r.json())).reviews || [] : [];
+      reviews = Object.fromEntries(list.map((r) => [r.id, r]));
+    } catch {
+      reviews = {};
+    }
+    const changed = Object.values(reviews).filter((r) => r.status === 'changed').length;
+    if (changed && !notified) {
+      notified = true; // once per sign-in
+      h.toast(L().changedToast(changed));
+    }
+  }
+
+  // One line on what moved since a product was saved, and what to do about it.
+  function rateText(c) {
+    const name = L().rateNames[c.key] || c.label;
+    const f = (v) => (c.unit === 'ratio' ? `${+(v * 100).toFixed(2)}%` : `${+v.toFixed(4)}`);
+    return `${name} ${f(c.before)} → ${f(c.after)}`;
+  }
+  const signed = (v, cur) => (v < 0 ? `-${money(-v, cur)}` : money(v, cur));
+  function reviewHTML(p) {
+    const l = L();
+    const r = reviews[p.id];
+    if (!r) return '';
+    const cur = r.currency;
+    const parts = [];
+    if (r.status === 'abstain' || r.status === 'error') parts.push(esc(l.rvStop));
+    else if (r.status === 'no_baseline') parts.push(esc(l.rvNoBase(money(r.target_price, cur))));
+    else if (r.status === 'unchanged') {
+      const s = r.at_saved_price;
+      const loss = s ? s.p_loss : r.p_loss;
+      parts.push(esc(l.rvSame(money(r.saved.price, cur), pct(s ? s.margin_pct : r.saved.margin_pct), loss < 0.0005 ? '< 0.1%' : pct(loss))));
+    } else {
+      if (r.changes.length) parts.push(esc(l.rvMoved(r.changes.slice(0, 3).map(rateText).join(h.getLang() === 'zh' ? '，' : ', '))));
+      const s = r.at_saved_price;
+      if (s) parts.push(l.rvMargin(esc(money(r.saved.price, cur)), esc(pct(r.saved.margin_pct ?? r.target_margin)), esc(pct(s.margin_pct))) + l.rvNewPrice(esc(money(r.target_price, cur)), esc(pct(r.target_margin, 0))));
+    }
+    if (r.at_check_price) {
+      const c = r.at_check_price;
+      parts.push(esc(l.rvCheck(money(c.price, cur), signed(c.profit_per_unit, cur), pct(c.margin_pct))));
+    }
+    return `<p class="saved__rv">${parts.join(' ')}</p>`;
+  }
+  function badge(p) {
+    const l = L();
+    const st = reviews[p.id]?.status;
+    const map = { unchanged: ['good', l.stUnchanged], changed: ['warn', l.stChanged], no_baseline: ['', l.stNoBase], abstain: ['bad', l.stStop], error: ['bad', l.stStop] };
+    const [cls, txt] = map[st] || [];
+    return txt ? `<span class="tag tag--${cls}">${esc(txt)}</span>` : '';
+  }
+  async function rebaseline(id) {
+    const p = products.find((x) => x.id === id);
+    const r = reviews[id];
+    if (!p || !r || !r.calc) return;
+    const data = { ...p.data, calc: r.calc, baseline: r.current_baseline, priceText: money(r.target_price, r.currency) };
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data }) });
+      if (!res.ok) throw new Error(String(res.status));
+      await loadProducts();
+      renderWelcome();
+      h.toast(L().updated);
+    } catch {
+      h.toast(L().errors.x);
     }
   }
 
@@ -275,9 +374,17 @@ export function createPersonal(h) {
     if (products.length) {
       const sv = document.createElement('div');
       sv.className = 'saved';
-      sv.innerHTML = `<p class="starters__label">${esc(l.savedTitle)}</p>` +
-        products.map((p) => `<div class="saved__row"><span class="saved__name">${esc(p.name)}</span><span class="saved__price">${esc(p.data.priceText || '')}</span>
-          <button type="button" class="btn btn--quiet" data-open="${p.id}">${esc(l.open)}</button><button type="button" class="btn btn--quiet" data-del="${p.id}" aria-label="${esc(l.remove)}">×</button></div>`).join('');
+      sv.innerHTML = `<p class="starters__label">${esc(l.savedTitle)} <small>· ${esc(l.savedHint)}</small></p>` +
+        products.map((p) => {
+          const r = reviews[p.id];
+          const market = p.data.calc?.market || p.data.inputs?.market;
+          const canUpdate = r && r.calc && (r.status === 'changed' || r.status === 'no_baseline');
+          return `<div class="saved__item"><div class="saved__row"><span class="saved__name">${esc(p.name)}</span>
+            <span class="saved__price">${market ? esc(marketName(market, h.getLang())) + ' · ' : ''}${esc(p.data.priceText || '')}</span>${badge(p)}
+            <span class="saved__acts"><button type="button" class="btn btn--quiet" data-open="${p.id}">${esc(l.open)}</button><button type="button" class="btn btn--quiet" data-del="${p.id}" aria-label="${esc(l.remove)}">×</button></span></div>
+            ${reviewHTML(p)}${canUpdate ? `<button type="button" class="btn btn--quiet saved__upd" data-upd="${p.id}">${esc(l.update)}</button>` : ''}</div>`;
+        }).join('');
+      sv.querySelectorAll('[data-upd]').forEach((b) => b.addEventListener('click', () => rebaseline(+b.dataset.upd)));
       sv.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => h.openProduct(products.find((x) => x.id === +b.dataset.open).data)));
       sv.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
         await fetch(`/api/products/${b.dataset.del}`, { method: 'DELETE' });
@@ -355,6 +462,8 @@ export function createPersonal(h) {
     await fetch('/api/auth/logout', { method: 'POST' });
     user = null;
     products = [];
+    reviews = {};
+    notified = false;
     $('dlg-account').close();
     paintAccount();
     renderWelcome();

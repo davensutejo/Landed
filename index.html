@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="no-js">
+<html lang="en" class="no-js" data-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -12,9 +12,20 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%230A0910'/%3E%3Ccircle cx='900' cy='260' r='220' fill='none' stroke='%23C9A24B' stroke-opacity='0.35' stroke-width='2'/%3E%3Ctext x='80' y='320' fill='%23F3EDE0' font-family='serif' font-size='96'%3ELanded%3C/text%3E%3Ctext x='80' y='390' fill='%23E8643C' font-family='monospace' font-size='22' letter-spacing='4'%3ETHE LANDED PRICE, SOURCED%3C/text%3E%3C/svg%3E" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 2 C52 2 62 12 62 32 C62 52 52 62 32 62 C12 62 2 52 2 32 C2 12 12 2 32 2 Z' fill='%2314110F' stroke='%23C9A24B' stroke-width='2'/%3E%3Cpath d='M22 18 V44 H44' fill='none' stroke='%23F3EDE0' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M32 10 C32.4 14 35.5 17.1 39.5 17.5 C35.5 17.9 32.4 21 32 25 C31.6 21 28.5 17.9 24.5 17.5 C28.5 17.1 31.6 14 32 10 Z' fill='%23E8643C'/%3E%3C/svg%3E" />
+  <script>
+    // Decide the page language before first paint (see src/i18n.js; same key as the agent page).
+    (function () {
+      var l = null;
+      try { var q = new URLSearchParams(location.search).get('lang'); if (q === 'zh' || q === 'en') l = q; } catch (e) {}
+      if (!l) { try { var v = localStorage.getItem('landed-lang'); if (v === 'zh' || v === 'en') l = v; } catch (e) {} }
+      if (!l) { l = /^zh/i.test(navigator.language || '') ? 'zh' : 'en'; }
+      document.documentElement.dataset.lang = l;
+      document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+    })();
+  </script>
 </head>
 <body data-concept="11-cream-backgrounds">
-  <a href="#main-content" class="skip-link">Skip to content</a>
+  <a data-i18n="skip" href="#main-content" class="skip-link">Skip to content</a>
 
   <!-- Shared SVG Symbols & Filters -->
   <svg class="svg-defs" aria-hidden="true" width="0" height="0">
@@ -48,13 +59,13 @@
   <div class="film-grain" aria-hidden="true"></div>
 
   <!-- Preloader (Concept 8) -->
-  <div id="preloader" class="preloader" data-concept="8-pixel-loaders" role="status" aria-live="polite" aria-label="Loading Landed">
+  <div id="preloader" class="preloader" data-concept="8-pixel-loaders" role="status" aria-live="polite" aria-label="Loading Landed" data-i18n-attr="aria-label:preloader.aria">
     <div class="preloader__inner">
       <div class="preloader__grid" id="preloader-grid" aria-hidden="true"></div>
       <div class="preloader__hud">
         <div class="preloader__left">
           <span class="preloader__counter" id="preloader-counter">0000</span>
-          <span class="preloader__label">LOADING</span>
+          <span data-i18n="preloader.label" class="preloader__label">LOADING</span>
         </div>
         <div class="preloader__right" data-config="YEAR_ROMAN">MMXXVI</div>
       </div>
@@ -64,36 +75,36 @@
   <!-- Header (Concepts 5, 13, 15, 19) -->
   <header id="site-header" class="site-header" data-concept="15-liquid-glass">
     <div class="header-pill liquid-glass squircle" data-squircle="24" data-glass-id="header-pill">
-      <a href="#hero" class="brand-link" aria-label="Landed home">
+      <a href="#hero" class="brand-link" aria-label="Landed home" data-i18n-attr="aria-label:brand.aria">
         <svg class="brand-link__icon" width="28" height="28" aria-hidden="true"><use href="#landed-logo"></use></svg>
         <span class="brand-link__wordmark" data-config="BRAND_NAME" data-concept="9-instrument-serif">Landed</span>
         <span class="brand-link__motto" data-config="MOTTO" aria-hidden="true" lang="zh-CN">到岸</span>
       </a>
 
-      <nav class="header-nav" aria-label="Primary Navigation">
-        <a href="#showreel" class="header-nav__link"><span>I.</span> <em>痛点</em></a>
-        <a href="#costcard" class="header-nav__link"><span>II.</span> <em>算例</em></a>
-        <a href="#process" class="header-nav__link"><span>III.</span> <em>方法</em></a>
-        <a href="#moat" class="header-nav__link"><span>IV.</span> <em>壁垒</em></a>
+      <nav class="header-nav" aria-label="Primary Navigation" data-i18n-attr="aria-label:nav.aria">
+        <a href="#showreel" class="header-nav__link" data-i18n="nav.1"><span>I.</span> <em>痛点</em></a>
+        <a href="#costcard" class="header-nav__link" data-i18n="nav.2"><span>II.</span> <em>算例</em></a>
+        <a href="#process" class="header-nav__link" data-i18n="nav.3"><span>III.</span> <em>方法</em></a>
+        <a href="#moat" class="header-nav__link" data-i18n="nav.4"><span>IV.</span> <em>壁垒</em></a>
       </nav>
 
       <div class="header-actions">
         <a href="/agent" class="btn btn--glass liquid-glass squircle" data-squircle="14" data-glass-id="header-cta" data-cursor="OPEN">
-          <span>试用 Agent</span>
+          <span data-i18n="header.cta">试用 Agent</span>
           <svg class="icon-sparkle" width="12" height="12" aria-hidden="true" data-concept="14-sparkle-icons"><use href="#sparkle"></use></svg>
         </a>
-        <button type="button" class="mobile-menu-btn liquid-glass squircle" id="mobile-menu-toggle" data-squircle="14" aria-expanded="false" aria-controls="mobile-menu-sheet" aria-label="Toggle Menu">
-          <span class="mobile-menu-btn__label">MENU</span>
+        <button type="button" class="mobile-menu-btn liquid-glass squircle" id="mobile-menu-toggle" data-squircle="14" aria-expanded="false" aria-controls="mobile-menu-sheet" aria-label="Toggle Menu" data-i18n-attr="aria-label:menu.aria">
+          <span data-i18n="menu.label" class="mobile-menu-btn__label">MENU</span>
         </button>
       </div>
     </div>
 
     <div id="mobile-menu-sheet" class="mobile-sheet liquid-glass squircle" data-squircle="24" hidden>
       <nav class="mobile-sheet__nav" aria-label="Mobile Navigation">
-        <a href="#showreel" class="mobile-sheet__link">I. 痛点 The chaos</a>
-        <a href="#costcard" class="mobile-sheet__link">II. 算例 Cost card</a>
-        <a href="#process" class="mobile-sheet__link">III. 方法 Method</a>
-        <a href="#moat" class="mobile-sheet__link">IV. 壁垒 Moat</a>
+        <a href="#showreel" class="mobile-sheet__link" data-i18n="mnav.1">I. 痛点 The chaos</a>
+        <a href="#costcard" class="mobile-sheet__link" data-i18n="mnav.2">II. 算例 Cost card</a>
+        <a href="#process" class="mobile-sheet__link" data-i18n="mnav.3">III. 方法 Method</a>
+        <a href="#moat" class="mobile-sheet__link" data-i18n="mnav.4">IV. 壁垒 Moat</a>
       </nav>
       <div class="mobile-sheet__meta">
         <span data-config="MOTTO">到岸</span> · <span data-config="CITIES">CN → EU · US</span>
@@ -125,41 +136,48 @@
 
       <div class="container hero__grid">
         <div class="hero__folio" aria-hidden="true">
-          <span class="folio-num">ACT I.</span>
+          <span data-i18n="hero.folio" class="folio-num">ACT I.</span>
           <span class="marginalia" data-speed="-0.2">HS 8509.40 · DE · IOSS</span>
         </div>
 
         <div class="hero__content">
           <div class="eyebrow" data-concept="12-all-caps-eyebrows">
             <span class="live-dot"></span>
-            <span class="eyebrow__text">出海赛道 · CROSS-BORDER LANDED-COST AGENT</span>
+            <span data-i18n="hero.eyebrow" class="eyebrow__text">出海赛道 · CROSS-BORDER LANDED-COST AGENT</span>
           </div>
 
-          <h1 id="hero-heading" class="display-title" data-concept="10-one-italic-word">
+          <h1 id="hero-heading" class="display-title" data-concept="10-one-italic-word" data-i18n="hero.title">
             <span class="zh" lang="zh-CN">到岸价，一分钟算清。</span>
             The price that <em class="ital">lands</em>.
           </h1>
 
-          <p class="hero__sub">
+          <p class="hero__sub" data-i18n="hero.sub">
             Tell it what you sell and where. You get a landed cost, a 95% risk-buffered price, a localized listing and the compliance flags. Every number comes from code, and carries its source, the date we checked it and a status: verified, secondary or the seller’s own assumption.
           </p>
 
+          <ul class="hero__points" data-only="zh" aria-label="核心卖点">
+            <li>免费使用，无需注册</li>
+            <li>直接用中文提问</li>
+            <li>欧盟 27 国 + 美国</li>
+            <li>计算不经过 AI，可审计</li>
+          </ul>
+
           <div class="hero__ctas">
             <a href="/agent" class="btn btn--primary liquid-glass squircle" data-squircle="24" data-glass-id="hero-cta" data-cursor="OPEN">
-              <span>打开 Agent 工作台</span>
+              <span data-i18n="hero.cta1">打开 Agent 工作台</span>
               <svg class="icon-sparkle" width="14" height="14" aria-hidden="true"><use href="#sparkle"></use></svg>
             </a>
             <a href="#costcard" class="link-underline" data-cursor="OPEN">
-              <span>看一个真实算例 ↓</span>
+              <span data-i18n="hero.cta2">看一个真实算例 ↓</span>
             </a>
           </div>
 
           <div class="hero__meta">
-            <span>SNAPSHOT 2026-11-08</span>
+            <span data-i18n="hero.snapshot">SNAPSHOT 2026-11-08</span>
             <span class="sep">·</span>
             <span data-config="CITIES">CN → EU · US</span>
             <span class="sep">·</span>
-            <span class="scroll-cue">SCROLL <span class="pixel-arrow" aria-hidden="true">↓</span></span>
+            <span class="scroll-cue" data-i18n="hero.scroll">SCROLL <span class="pixel-arrow" aria-hidden="true">↓</span></span>
           </div>
         </div>
       </div>
@@ -170,7 +188,7 @@
       <!-- MARQUEE ROW 1 (Concept 18) -->
       <div class="marquee-band marquee-band--top" data-concept="18-endless-marquees" aria-hidden="true">
         <div class="marquee-track" data-marquee-dir="1">
-          <div class="marquee-item">
+          <div class="marquee-item" data-i18n="marquee.top">
             <span>HS CODE</span><svg class="marquee-star" width="22" height="22"><use href="#sparkle"></use></svg>
             <span>DUTY</span><svg class="marquee-star" width="22" height="22"><use href="#sparkle"></use></svg>
             <em class="marquee-ital">VAT</em><svg class="marquee-star" width="22" height="22"><use href="#sparkle"></use></svg>
@@ -190,10 +208,10 @@
             <span class="folio-tag" aria-hidden="true">I.</span>
             <div class="eyebrow">
               <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
-              <span class="eyebrow__text">I. 痛点 · THE CHAOS</span>
+              <span data-i18n="showreel.eyebrow" class="eyebrow__text">I. 痛点 · THE CHAOS</span>
             </div>
-            <h2 id="showreel-heading" class="section-title"><span class="zh" lang="zh-CN">八项输入，几种语言，一张没人看得懂的 Excel。</span>Eight inputs. One <em class="ital">fragile</em> spreadsheet.</h2>
-            <p class="section-lede">To answer “what should I charge?”, a seller has to combine the tariff classification, the duty rate, VAT, freight bands, platform fees, FX, return costs and a local-language listing with its battery and labeling rules. Since 2025 that work can’t be skipped: the US suspended duty-free de minimis on 29 Aug 2025, and on 1 Jul 2026 the EU replaced its €150 exemption with a €3 duty per item tariff category. Every low-value parcel now needs an HS code.</p>
+            <h2 id="showreel-heading" class="section-title" data-i18n="showreel.title"><span class="zh" lang="zh-CN">八项输入，几种语言，一张没人看得懂的 Excel。</span>Eight inputs. One <em class="ital">fragile</em> spreadsheet.</h2>
+            <p class="section-lede" data-i18n="showreel.lede">To answer “what should I charge?”, a seller has to combine the tariff classification, the duty rate, VAT, freight bands, platform fees, FX, return costs and a local-language listing with its battery and labeling rules. Since 2025 that work can’t be skipped: the US suspended duty-free de minimis on 29 Aug 2025, and on 1 Jul 2026 the EU replaced its €150 exemption with a €3 duty per item tariff category. Every low-value parcel now needs an HS code.</p>
           </div>
 
           <figure class="showreel__figure">
@@ -204,9 +222,9 @@
               <canvas id="showreel-proc-canvas" class="showreel__proc" aria-hidden="true"></canvas>
               <canvas id="showreel-ascii-canvas" class="showreel__ascii" aria-hidden="true"></canvas>
               <div class="showreel__lens liquid-glass" id="showreel-lens" aria-hidden="true"></div>
-              <div class="showreel__hud" id="showreel-hud" aria-hidden="true">8 INPUTS · 3 LANGUAGES · 1 PRICE</div>
+              <div class="showreel__hud" id="showreel-hud" aria-hidden="true" data-i18n="showreel.hud">8 INPUTS · 3 LANGUAGES · 1 PRICE</div>
             </div>
-            <figcaption class="figure-caption">Fig. I: The fragments a seller stitches together before every new market.</figcaption>
+            <figcaption class="figure-caption" data-i18n="showreel.caption">Fig. I: The fragments a seller stitches together before every new market.</figcaption>
           </figure>
         </div>
       </section>
@@ -218,10 +236,10 @@
             <span class="folio-tag" aria-hidden="true">I.b</span>
             <span class="marginalia" aria-hidden="true" data-speed="0.18">source_url · snapshot_date</span>
             <div class="eyebrow">
-              <span class="eyebrow__text">I.b 证据 · THE EVIDENCE</span>
+              <span data-i18n="logos.eyebrow" class="eyebrow__text">I.b 证据 · THE EVIDENCE</span>
             </div>
-            <h2 id="logos-heading" class="section-title"><span class="zh" lang="zh-CN">问题是真实的，数据是可查的。</span>Ten sources. One <em class="ital">landed</em> price.</h2>
-            <p class="section-lede">Each tile is a source Landed reads from. Below are the published findings the design rests on, each linked to the original.</p>
+            <h2 id="logos-heading" class="section-title" data-i18n="logos.title"><span class="zh" lang="zh-CN">问题是真实的，数据是可查的。</span>Ten sources. One <em class="ital">landed</em> price.</h2>
+            <p class="section-lede" data-i18n="logos.lede">Each tile is a source Landed reads from. Below are the published findings the design rests on, each linked to the original.</p>
           </div>
 
           <div class="disco-rig" id="disco-rig" aria-hidden="true">
@@ -246,28 +264,28 @@
             <div class="logos__grid" id="logos-grid"></div>
           </div>
 
-          <div class="stats-strip" role="list" aria-label="Key evidence">
+          <div class="stats-strip" role="list" aria-label="Key evidence" data-i18n-attr="aria-label:stats.aria">
             <div class="stat-box squircle" data-squircle="24" role="listitem">
               <div class="stat-box__top">
                 <span class="stat-box__num" data-count="25" data-suffix="%">25%</span>
               </div>
-              <span class="stat-box__label">GPT-5-Thinking, exact 10-digit HS code (ATLAS, 2025)</span>
+              <span data-i18n="stat.1" class="stat-box__label">GPT-5-Thinking, exact 10-digit HS code (ATLAS, 2025)</span>
             </div>
             <div class="stat-box squircle" data-squircle="24" role="listitem">
               <div class="stat-box__top">
                 <span class="stat-box__num" data-count="3" data-prefix="€">€3</span>
               </div>
-              <span class="stat-box__label">EU duty per item tariff category on consignments ≤ €150, since 1 Jul 2026</span>
+              <span data-i18n="stat.2" class="stat-box__label">EU duty per item tariff category on consignments ≤ €150, since 1 Jul 2026</span>
             </div>
             <div class="stat-box squircle" data-squircle="24" role="listitem">
               <div class="stat-box__top">
-                <span class="stat-box__num" data-count="2.84" data-prefix="¥" data-suffix="T" data-decimals="2">¥2.84T</span>
+                <span class="stat-box__num" data-count="2.84" data-prefix="¥" data-suffix="T" data-decimals="2" data-i18n="stat.3.num" data-i18n-attr="data-prefix:stat3.prefix;data-suffix:stat3.suffix">¥2.84T</span>
               </div>
-              <span class="stat-box__label">China cross-border e-commerce, 2025 (GACC)</span>
+              <span data-i18n="stat.3" class="stat-box__label">China cross-border e-commerce, 2025 (GACC)</span>
             </div>
           </div>
 
-          <ul class="evidence-list" id="evidence-list" aria-label="References"></ul>
+          <ul class="evidence-list" id="evidence-list" aria-label="References" data-i18n-attr="aria-label:refs.aria"></ul>
         </div>
       </section>
 
@@ -277,17 +295,17 @@
         <div class="container">
           <div class="section-header">
             <span class="folio-tag" aria-hidden="true">I.c</span>
-            <span class="marginalia" aria-hidden="true" data-speed="-0.15">RULE ZERO</span>
+            <span class="marginalia" aria-hidden="true" data-speed="-0.15" data-i18n="manifesto.mark">RULE ZERO</span>
             <div class="eyebrow">
               <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
-              <span class="eyebrow__text">I.c 原则 · THE THESIS</span>
+              <span data-i18n="manifesto.eyebrow" class="eyebrow__text">I.c 原则 · THE THESIS</span>
             </div>
-            <h2 id="manifesto-heading" class="section-title"><span class="zh" lang="zh-CN">数字永远不来自大模型。</span>Numbers never come from the <em class="ital">model</em>.</h2>
+            <h2 id="manifesto-heading" class="section-title" data-i18n="manifesto.title"><span class="zh" lang="zh-CN">数字永远不来自大模型。</span>Numbers never come from the <em class="ital">model</em>.</h2>
           </div>
 
           <div class="manifesto__body" id="manifesto-stage">
             <!-- Screen reader & fallback paragraph -->
-            <p class="manifesto__sr-text" id="manifesto-source">Language models are good at language and bad at arithmetic they cannot check. On a benchmark of 200 binding U.S. customs rulings, the best frontier reasoning model picked the exact ten-digit tariff code one time in four. Consultants using AI on a task outside its frontier were nineteen points less likely to be right. So Landed splits the work. The model reads the messy product description, decides which tool to call, asks for what is missing (and, only where the code changes the price, the one question that settles it), and writes the local-language listing. Every rate, fee and price comes from deterministic code reading a table in which each row names its source where one exists, a status (verified, secondary or assumption) and the date we checked it. If a figure is not in the table, the agent says so instead of inventing one.</p>
+            <p class="manifesto__sr-text" id="manifesto-source" data-i18n="manifesto.text">Language models are good at language and bad at arithmetic they cannot check. On a benchmark of 200 binding U.S. customs rulings, the best frontier reasoning model picked the exact ten-digit tariff code one time in four. Consultants using AI on a task outside its frontier were nineteen points less likely to be right. So Landed splits the work. The model reads the messy product description, decides which tool to call, asks for what is missing (and, only where the code changes the price, the one question that settles it), and writes the local-language listing. Every rate, fee and price comes from deterministic code reading a table in which each row names its source where one exists, a status (verified, secondary or assumption) and the date we checked it. If a figure is not in the table, the agent says so instead of inventing one.</p>
 
             <!-- Draggable dithered cameo -->
             <div class="manifesto__cameo squircle" id="manifesto-cameo" data-squircle="64" data-cursor="DRAG" aria-hidden="true">
@@ -308,49 +326,49 @@
             <span class="folio-tag" aria-hidden="true">II.</span>
             <div class="eyebrow">
               <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
-              <span class="eyebrow__text">II. 算例 · A WORKED EXAMPLE</span>
+              <span data-i18n="cc.eyebrow" class="eyebrow__text">II. 算例 · A WORKED EXAMPLE</span>
             </div>
-            <h2 id="costcard-heading" class="section-title"><span class="zh" lang="zh-CN">一个带电池的搅拌杯，卖到德国。</span>One blender. One <em class="ital">honest</em> price.</h2>
-            <p class="section-lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, no LLM; its Monte Carlo uses a different random generator and agrees with the backend to within about 0.2%). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
+            <h2 id="costcard-heading" class="section-title" data-i18n="cc.title"><span class="zh" lang="zh-CN">一个带电池的搅拌杯，卖到德国。</span>One blender. One <em class="ital">honest</em> price.</h2>
+            <p class="section-lede" data-i18n="cc.lede">This card is computed live in your browser by a JavaScript port of the deterministic engine behind the agent (same formulas, no LLM; its Monte Carlo uses a different random generator and agrees with the backend to within about 0.2%). Toggle the retail-set option to see how the EU’s €3-per-category rule changes the price, or drag the FX and returns sliders to see the margin distribution move under a fixed price.</p>
           </div>
 
           <div class="costcard__grid">
             <div class="cc-panel">
-              <div class="cc-prompt"><b>&gt;</b> 500ml portable blender, built-in Li-ion battery, + spare Tritan cup · ¥38 · 0.6 kg · <b>DE (EU), 25% target margin</b> · HS 8509.40 (confirmed)</div>
-              <div class="cc-panel__head"><span class="cc-panel__title">Price waterfall · EUR per unit</span><span class="cc-panel__title">deterministic</span></div>
-              <svg id="cc-waterfall" class="cc-svg" viewBox="0 0 640 300" role="img" aria-label="Cost waterfall from COGS to list price"></svg>
-              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Margin at that price · <b data-cc="paths">5,000</b> Monte Carlo paths</span><span class="cc-panel__title">FX ~ N · returns ~ Beta</span></div>
-              <svg id="cc-mc" class="cc-svg" viewBox="0 0 640 180" role="img" aria-label="Distribution of simulated margins"></svg>
+              <div class="cc-prompt" data-i18n="cc.prompt"><b>&gt;</b> 500ml portable blender, built-in Li-ion battery, + spare Tritan cup · ¥38 · 0.6 kg · <b>DE (EU), 25% target margin</b> · HS 8509.40 (confirmed)</div>
+              <div class="cc-panel__head"><span class="cc-panel__title" data-i18n="cc.head1a">Price waterfall · EUR per unit</span><span class="cc-panel__title" data-i18n="cc.head1b">deterministic</span></div>
+              <svg id="cc-waterfall" class="cc-svg" viewBox="0 0 640 300" role="img" aria-label="Cost waterfall from COGS to list price" data-i18n-attr="aria-label:wf.aria"></svg>
+              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title" data-i18n="cc.head2a">Margin at that price · <b data-cc="paths">5,000</b> Monte Carlo paths</span><span class="cc-panel__title" data-i18n="cc.head2b">FX ~ N · returns ~ Beta</span></div>
+              <svg id="cc-mc" class="cc-svg" viewBox="0 0 640 180" role="img" aria-label="Distribution of simulated margins" data-i18n-attr="aria-label:mc.aria"></svg>
               <div class="cc-sliders">
                 <label class="cc-slider">
-                  <span class="cc-slider__top"><span>CNY strengthens vs EUR</span><output data-cc="fx-out">0.0%</output></span>
+                  <span class="cc-slider__top"><span data-i18n="cc.fx">CNY strengthens vs EUR</span><output data-cc="fx-out">0.0%</output></span>
                   <input type="range" id="cc-fx" min="0" max="10" step="0.5" value="0" />
                 </label>
                 <label class="cc-slider">
-                  <span class="cc-slider__top"><span>Mean return rate</span><output data-cc="ret-out">8%</output></span>
+                  <span class="cc-slider__top"><span data-i18n="cc.ret">Mean return rate</span><output data-cc="ret-out">8%</output></span>
                   <input type="range" id="cc-ret" min="2" max="25" step="1" value="8" />
                 </label>
-                <button type="button" class="cc-reset" id="cc-reset">Reset</button>
+                <button type="button" class="cc-reset" id="cc-reset" data-i18n="cc.reset">Reset</button>
               </div>
               <p class="cc-bundle" data-cc="shockNote"></p>
-              <label class="cc-toggle"><input type="checkbox" id="cc-set-toggle" /> Declare blender + cup as one retail set (WCO GRI 3(b))</label>
+              <label class="cc-toggle" data-i18n="cc.toggle"><input type="checkbox" id="cc-set-toggle" /> Declare blender + cup as one retail set (WCO GRI 3(b))</label>
               <p class="cc-bundle" data-cc="bundle"></p>
             </div>
 
             <div class="cc-panel">
               <div class="cc-kpis">
-                <div class="cc-kpi cc-kpi--accent"><span class="cc-kpi__num" data-cc="price">—</span><span class="cc-kpi__lbl">Target price, VAT incl.</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="floor">—</span><span class="cc-kpi__lbl">95% risk-buffered price</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="p5">—</span><span class="cc-kpi__lbl">P5 margin (MaR₉₅)</span></div>
-                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="pbelow">—</span><span class="cc-kpi__lbl">P(margin &lt; target)</span></div>
+                <div class="cc-kpi cc-kpi--accent"><span class="cc-kpi__num" data-cc="price">—</span><span class="cc-kpi__lbl" data-i18n="cc.kpi.price">Target price, VAT incl.</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="floor">—</span><span class="cc-kpi__lbl" data-i18n="cc.kpi.floor">95% risk-buffered price</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="p5">—</span><span class="cc-kpi__lbl" data-i18n="cc.kpi.p5">P5 margin (MaR₉₅)</span></div>
+                <div class="cc-kpi"><span class="cc-kpi__num" data-cc="pbelow">—</span><span class="cc-kpi__lbl" data-i18n="cc.kpi.pbelow">P(margin &lt; target)</span></div>
               </div>
-              <table class="cc-table" aria-label="Stress scenarios: margin at target price">
+              <table class="cc-table" aria-label="Stress scenarios: margin at target price" data-i18n-attr="aria-label:stress.aria">
                 <tbody data-cc="stress"></tbody>
               </table>
-              <p class="cc-disclaimer">P(net loss) at target price: <strong data-cc="ploss">—</strong></p>
-              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title">Provenance</span></div>
+              <p class="cc-disclaimer" data-i18n="cc.ploss">P(net loss) at target price: <strong data-cc="ploss">—</strong></p>
+              <div class="cc-panel__head" style="margin-top:22px"><span class="cc-panel__title" data-i18n="cc.prov">Provenance</span></div>
               <ul class="cc-provenance" id="cc-provenance"></ul>
-              <p class="cc-disclaimer">Figures marked ASSUMPTION are placeholders that the seller replaces with their own. This is quantitative decision support, not licensed customs brokerage.</p>
+              <p class="cc-disclaimer" data-i18n="cc.disclaimer">Figures marked ASSUMPTION are placeholders that the seller replaces with their own. This is quantitative decision support, not licensed customs brokerage.</p>
             </div>
           </div>
         </div>
@@ -362,11 +380,11 @@
           <div class="container process__top">
             <div class="section-header">
               <span class="folio-tag" aria-hidden="true">III.</span>
-              <span class="marginalia" aria-hidden="true">≤ 6 TOOL STEPS</span>
+              <span class="marginalia" aria-hidden="true" data-i18n="process.mark">≤ 6 TOOL STEPS</span>
               <div class="eyebrow">
-                <span class="eyebrow__text">III. 方法 · THE AGENT LOOP</span>
+                <span data-i18n="process.eyebrow" class="eyebrow__text">III. 方法 · THE AGENT LOOP</span>
               </div>
-              <h2 id="process-heading" class="section-title"><span class="zh" lang="zh-CN">从一句描述到一个可审计的价格。</span>From one sentence to an <em class="ital">auditable</em> price.</h2>
+              <h2 id="process-heading" class="section-title" data-i18n="process.title"><span class="zh" lang="zh-CN">从一句描述到一个可审计的价格。</span>From one sentence to an <em class="ital">auditable</em> price.</h2>
             </div>
           </div>
 
@@ -387,27 +405,27 @@
               <!-- Flowchart Nodes -->
               <g class="flow-node" data-node="0" transform="translate(260, 188)">
                 <rect width="110" height="44" rx="12" fill="var(--cream)" stroke="var(--ink)" stroke-opacity="0.4" />
-                <text x="55" y="26" text-anchor="middle" class="flow-label">DESCRIBE</text>
+                <text x="55" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.0">DESCRIBE</text>
               </g>
               <g class="flow-node" data-node="1" transform="translate(660, 98)">
                 <rect width="110" height="44" rx="12" fill="var(--cream)" stroke="var(--ink)" stroke-opacity="0.4" />
-                <text x="55" y="26" text-anchor="middle" class="flow-label">CLASSIFY</text>
+                <text x="55" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.1">CLASSIFY</text>
               </g>
               <g class="flow-node" data-node="2" transform="translate(1090, 188)">
                 <rect width="120" height="44" rx="12" fill="var(--cream)" stroke="var(--ink)" stroke-opacity="0.4" />
-                <text x="60" y="26" text-anchor="middle" class="flow-label">ASK</text>
+                <text x="60" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.2">ASK</text>
               </g>
               <g class="flow-node" data-node="3" transform="translate(1365, 278)">
                 <polygon points="55,0 110,22 55,44 0,22" fill="var(--cream)" stroke="var(--vermilion)" stroke-opacity="0.6" />
-                <text x="55" y="26" text-anchor="middle" class="flow-label">CONFIRMED?</text>
+                <text x="55" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.3">CONFIRMED?</text>
               </g>
               <g class="flow-node" data-node="4" transform="translate(1640, 188)">
                 <rect width="110" height="44" rx="12" fill="var(--cream)" stroke="var(--ink)" stroke-opacity="0.4" />
-                <text x="55" y="26" text-anchor="middle" class="flow-label">COMPUTE</text>
+                <text x="55" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.4">COMPUTE</text>
               </g>
               <g class="flow-node" data-node="5" transform="translate(2120, 188)">
                 <rect width="110" height="44" rx="12" fill="var(--cream)" stroke="var(--ink)" stroke-opacity="0.4" />
-                <text x="55" y="26" text-anchor="middle" class="flow-label">LIST+FLAG</text>
+                <text x="55" y="26" text-anchor="middle" class="flow-label" data-i18n="flow.5">LIST+FLAG</text>
               </g>
 
               <!-- Live Vermilion Token -->
@@ -419,51 +437,51 @@
 
             <div class="process__track" id="process-track">
               <article class="process-panel squircle" data-squircle="40">
-                <span class="eyebrow">STEP I · DESCRIBE</span>
-                <h3 class="process-panel__title">I. <em class="ital">Describe</em></h3>
+                <span class="eyebrow" data-i18n="p1.eyebrow">STEP I · DESCRIBE</span>
+                <h3 class="process-panel__title" data-i18n="p1.title">I. <em class="ital">Describe</em></h3>
                 <figure class="process-panel__fig">
                   <div class="process-panel__art squircle" data-squircle="24">
                     <canvas class="process-art-canvas" data-seed="11" width="420" height="250"></canvas>
                   </div>
-                  <figcaption class="figure-caption">I. Describe: one sentence, in Chinese or English.</figcaption>
+                  <figcaption class="figure-caption" data-i18n="p1.caption">I. Describe: one sentence, in Chinese or English.</figcaption>
                 </figure>
-                <p class="process-panel__copy">“500 ml portable blender with a built-in battery plus a spare cup, ¥38, 0.6 kg. What should I charge in Germany for a 25% margin?” Pasted listings are handled as untrusted data, never as instructions.</p>
+                <p class="process-panel__copy" data-i18n="p1.copy">“500 ml portable blender with a built-in battery plus a spare cup, ¥38, 0.6 kg. What should I charge in Germany for a 25% margin?” Pasted listings are handled as untrusted data, never as instructions.</p>
               </article>
 
               <article class="process-panel squircle" data-squircle="40">
-                <span class="eyebrow">STEP II · CLASSIFY</span>
-                <h3 class="process-panel__title">II. <em class="ital">Classify</em></h3>
+                <span class="eyebrow" data-i18n="p2.eyebrow">STEP II · CLASSIFY</span>
+                <h3 class="process-panel__title" data-i18n="p2.title">II. <em class="ital">Classify</em></h3>
                 <figure class="process-panel__fig">
                   <div class="process-panel__art squircle" data-squircle="24">
                     <canvas class="process-art-canvas" data-seed="22" width="420" height="250"></canvas>
                   </div>
-                  <figcaption class="figure-caption">II. Classify: candidates narrowed from a hand-built table of HS headings and chapter notes.</figcaption>
+                  <figcaption class="figure-caption" data-i18n="p2.caption">II. Classify: candidates narrowed from a hand-built table of HS headings and chapter notes.</figcaption>
                 </figure>
-                <p class="process-panel__copy">Today this covers five candidate codes around blenders and mixers. It is only consulted where the code changes the money: a German order below €150 is priced for any product without asking. Where the code does matter, such as US duty, the agent asks for the attributes that decide it.</p>
+                <p class="process-panel__copy" data-i18n="p2.copy">Today this covers five candidate codes around blenders and mixers. It is only consulted where the code changes the money: a German order below €150 is priced for any product without asking. Where the code does matter, such as US duty, the agent asks for the attributes that decide it.</p>
               </article>
 
               <article class="process-panel squircle" data-squircle="40">
-                <span class="eyebrow">STEP III · COMPUTE</span>
-                <h3 class="process-panel__title">III. <em class="ital">Compute</em></h3>
+                <span class="eyebrow" data-i18n="p3.eyebrow">STEP III · COMPUTE</span>
+                <h3 class="process-panel__title" data-i18n="p3.title">III. <em class="ital">Compute</em></h3>
                 <figure class="process-panel__fig">
                   <div class="process-panel__art squircle" data-squircle="24">
                     <canvas class="process-art-canvas" data-seed="33" width="420" height="250"></canvas>
                   </div>
-                  <figcaption class="figure-caption">III. Compute: waterfall, Monte Carlo and stress table, all in code.</figcaption>
+                  <figcaption class="figure-caption" data-i18n="p3.caption">III. Compute: waterfall, Monte Carlo and stress table, all in code.</figcaption>
                 </figure>
-                <p class="process-panel__copy">The cost engine returns numbers. The model only explains them and never changes them.</p>
+                <p class="process-panel__copy" data-i18n="p3.copy">The cost engine returns numbers. The model only explains them and never changes them.</p>
               </article>
 
               <article class="process-panel squircle" data-squircle="40">
-                <span class="eyebrow">STEP IV · LOCALIZE</span>
-                <h3 class="process-panel__title">IV. <em class="ital">Localize</em></h3>
+                <span class="eyebrow" data-i18n="p4.eyebrow">STEP IV · LOCALIZE</span>
+                <h3 class="process-panel__title" data-i18n="p4.title">IV. <em class="ital">Localize</em></h3>
                 <figure class="process-panel__fig">
                   <div class="process-panel__art squircle" data-squircle="24">
                     <canvas class="process-art-canvas" data-seed="44" width="420" height="250"></canvas>
                   </div>
-                  <figcaption class="figure-caption">IV. Localize: the listing plus everything that could block clearance.</figcaption>
+                  <figcaption class="figure-caption" data-i18n="p4.caption">IV. Localize: the listing plus everything that could block clearance.</figcaption>
                 </figure>
-                <p class="process-panel__copy">Local-language copy, UN 3481 / PI 967 battery handling, food-contact declarations, and a flag when classifying the items as a retail set (GRI 3(b)) could lower the €3-per-category duty.</p>
+                <p class="process-panel__copy" data-i18n="p4.copy">Local-language copy, UN 3481 / PI 967 battery handling, food-contact declarations, and a flag when classifying the items as a retail set (GRI 3(b)) could lower the €3-per-category duty.</p>
               </article>
             </div>
           </div>
@@ -475,25 +493,25 @@
         <div class="container">
           <div class="section-header">
             <span class="folio-tag" aria-hidden="true">IV.</span>
-            <div class="eyebrow"><span class="eyebrow__text">IV. 壁垒 · WHY THIS ISN’T AN EXCEL WRAPPER</span></div>
-            <h2 id="moat-heading" class="section-title"><span class="zh" lang="zh-CN">税率表人人可下载，判断逻辑不行。</span>Anyone can download a tariff table. <em class="ital">Judgment</em> is harder to copy.</h2>
+            <div class="eyebrow"><span data-i18n="moat.eyebrow" class="eyebrow__text">IV. 壁垒 · WHY THIS ISN’T AN EXCEL WRAPPER</span></div>
+            <h2 id="moat-heading" class="section-title" data-i18n="moat.title"><span class="zh" lang="zh-CN">税率表人人可下载，判断逻辑不行。</span>Anyone can download a tariff table. <em class="ital">Judgment</em> is harder to copy.</h2>
           </div>
           <div class="moat__grid">
             <article class="moat-card">
-              <div class="moat-card__top"><span class="eyebrow">01 · DATA</span><span class="build-tag build-tag--progress">IN BUILD</span></div>
+              <div class="moat-card__top"><span class="eyebrow" data-i18n="m1.eyebrow">01 · DATA</span><span class="build-tag build-tag--progress" data-i18n="m1.tag">IN BUILD</span></div>
               <svg class="moat-art" viewBox="0 0 240 90" aria-hidden="true" data-art="tree">
                 <path class="moat-art__line" d="M120 14 V30 M120 30 H52 V50 M120 30 H120 V50 M120 30 H188 V50 M52 50 V68 M120 50 V68" />
                 <circle class="moat-art__node" cx="120" cy="12" r="6" />
-                <g class="moat-art__leaf"><rect x="30" y="48" width="44" height="18" rx="6" /><text x="52" y="60" text-anchor="middle">kinds</text></g>
+                <g class="moat-art__leaf"><rect x="30" y="48" width="44" height="18" rx="6" /><text x="52" y="60" text-anchor="middle" data-i18n="moat.svg.kinds">kinds</text></g>
                 <g class="moat-art__leaf"><rect x="98" y="48" width="44" height="18" rx="6" /><text x="120" y="60" text-anchor="middle">€150</text></g>
-                <g class="moat-art__leaf"><rect x="166" y="48" width="44" height="18" rx="6" /><text x="188" y="60" text-anchor="middle">US code</text></g>
+                <g class="moat-art__leaf"><rect x="166" y="48" width="44" height="18" rx="6" /><text x="188" y="60" text-anchor="middle" data-i18n="moat.svg.us">US code</text></g>
                 <circle class="moat-art__pulse" cx="120" cy="12" r="4" />
               </svg>
-              <h3 class="moat-card__title"><span class="zh" lang="zh-CN">只问会改变价格的问题</span>Only questions that change the money</h3>
-              <p>Under the EU’s €3 regime the duty is €3 per <em>kind</em> of item in a parcel, whatever the code. So for a German order below €150 the agent prices any product straight away and never asks about motors or materials; what it watches is how many different kinds of goods share a parcel. The HS question only appears where the code changes money: US duty and the customs declaration itself. Orders above €150 are not priced, because the exact code’s conventional duty would apply. For those, it stores the attributes the HS legal notes and WCO GRI use to separate neighbouring codes (five codes in the blender family today, built by hand; extending from binding rulings, CBP CROSS and EU BTI, is in build).</p>
+              <h3 class="moat-card__title" data-i18n="m1.title"><span class="zh" lang="zh-CN">只问会改变价格的问题</span>Only questions that change the money</h3>
+              <p data-i18n="m1.copy">Under the EU’s €3 regime the duty is €3 per <em>kind</em> of item in a parcel, whatever the code. So for a German order below €150 the agent prices any product straight away and never asks about motors or materials; what it watches is how many different kinds of goods share a parcel. The HS question only appears where the code changes money: US duty and the customs declaration itself. Orders above €150 are not priced, because the exact code’s conventional duty would apply. For those, it stores the attributes the HS legal notes and WCO GRI use to separate neighbouring codes (five codes in the blender family today, built by hand; extending from binding rulings, CBP CROSS and EU BTI, is in build).</p>
             </article>
             <article class="moat-card">
-              <div class="moat-card__top"><span class="eyebrow">02 · METHOD</span><span class="build-tag build-tag--built">BUILT</span></div>
+              <div class="moat-card__top"><span class="eyebrow" data-i18n="m2.eyebrow">02 · METHOD</span><span class="build-tag build-tag--built" data-i18n="m2.tag">BUILT</span></div>
               <svg class="moat-art" viewBox="0 0 240 90" aria-hidden="true" data-art="bell">
                 <path class="moat-art__axis" d="M10 76 H230" />
                 <path class="moat-art__fill" d="M10 76 C70 76 88 70 100 56 L100 76 Z" />
@@ -501,29 +519,29 @@
                 <path class="moat-art__p5" d="M100 76 V8" />
                 <text class="moat-art__label" x="104" y="14">P5</text>
               </svg>
-              <h3 class="moat-card__title"><span class="zh" lang="zh-CN">风险定价，而非加法</span>Risk-buffered pricing</h3>
-              <p>Instead of <code>COGS + freight + duty</code>, the engine prices under uncertainty: 95% margin-at-risk, the chance of missing the target, deterministic shocks, and rule-aware tips: a multipack of the same item pays the €3 once (a ¥6, 50 g phone case drops from €9.24 to €5.87 per unit as a 2-pack, same margin), while a free gift of a different kind adds €3.</p>
+              <h3 class="moat-card__title" data-i18n="m2.title"><span class="zh" lang="zh-CN">风险定价，而非加法</span>Risk-buffered pricing</h3>
+              <p data-i18n="m2.copy">Instead of <code>COGS + freight + duty</code>, the engine prices under uncertainty: 95% margin-at-risk, the chance of missing the target, deterministic shocks, and rule-aware tips: a multipack of the same item pays the €3 once (a ¥6, 50 g phone case drops from €9.24 to €5.87 per unit as a 2-pack, same margin), while a free gift of a different kind adds €3.</p>
             </article>
             <article class="moat-card">
-              <div class="moat-card__top"><span class="eyebrow">03 · FLYWHEEL</span><span class="build-tag build-tag--roadmap">ROADMAP</span></div>
+              <div class="moat-card__top"><span class="eyebrow" data-i18n="m3.eyebrow">03 · FLYWHEEL</span><span class="build-tag build-tag--roadmap" data-i18n="m3.tag">ROADMAP</span></div>
               <svg class="moat-art" viewBox="0 0 240 90" aria-hidden="true" data-art="loop">
                 <circle class="moat-art__ring" cx="120" cy="45" r="30" />
                 <g class="moat-art__spin"><circle class="moat-art__dot" cx="120" cy="15" r="5" /><circle class="moat-art__dot moat-art__dot--b" cx="150" cy="45" r="5" /><circle class="moat-art__dot" cx="120" cy="75" r="5" /><circle class="moat-art__dot moat-art__dot--b" cx="90" cy="45" r="5" /></g>
-                <text class="moat-art__label" x="120" y="49" text-anchor="middle">spec · HS</text>
+                <text class="moat-art__label" x="120" y="49" text-anchor="middle" data-i18n="moat.svg.spec">spec · HS</text>
               </svg>
-              <h3 class="moat-card__title"><span class="zh" lang="zh-CN">已清关先例回写</span>Verified cleared precedents</h3>
-              <p>When a seller logs a shipment that cleared without adjustment, Landed stores the <code>(spec, market, HS code, date)</code> tuple. Over time this becomes a crowd-verified mapping that a calculator can’t replicate.</p>
+              <h3 class="moat-card__title" data-i18n="m3.title"><span class="zh" lang="zh-CN">已清关先例回写</span>Verified cleared precedents</h3>
+              <p data-i18n="m3.copy">When a seller logs a shipment that cleared without adjustment, Landed stores the <code>(spec, market, HS code, date)</code> tuple. Over time this becomes a crowd-verified mapping that a calculator can’t replicate.</p>
             </article>
             <article class="moat-card">
-              <div class="moat-card__top"><span class="eyebrow">04 · MONITORING</span><span class="build-tag build-tag--roadmap">ROADMAP</span></div>
+              <div class="moat-card__top"><span class="eyebrow" data-i18n="m4.eyebrow">04 · MONITORING</span><span class="build-tag build-tag--roadmap" data-i18n="m4.tag">ROADMAP</span></div>
               <svg class="moat-art" viewBox="0 0 240 90" aria-hidden="true" data-art="pulse">
                 <path class="moat-art__axis" d="M10 60 H230" />
                 <path class="moat-art__trace" d="M10 60 H70 L80 56 L90 62 L100 60 H150 L160 20 L170 74 L180 52 L190 60 H230" />
                 <circle class="moat-art__alert" cx="160" cy="20" r="6" />
-                <text class="moat-art__label" x="172" y="18">rate moved</text>
+                <text class="moat-art__label" x="172" y="18" data-i18n="moat.svg.moved">rate moved</text>
               </svg>
-              <h3 class="moat-card__title"><span class="zh" lang="zh-CN">法规漂移预警</span>Regulatory drift alerts</h3>
-              <p>Because every rate carries a <code>snapshot_date</code>, saved SKUs can be recalculated whenever a duty, fee or FX band moves, flagging any SKU that falls below its margin floor. The EU’s €3 regime is scheduled to end on 1 Jul 2028, which is exactly this kind of change.</p>
+              <h3 class="moat-card__title" data-i18n="m4.title"><span class="zh" lang="zh-CN">法规漂移预警</span>Regulatory drift alerts</h3>
+              <p data-i18n="m4.copy">Because every rate carries a <code>snapshot_date</code>, saved SKUs can be recalculated whenever a duty, fee or FX band moves, flagging any SKU that falls below its margin floor. The EU’s €3 regime is scheduled to end on 1 Jul 2028, which is exactly this kind of change.</p>
             </article>
           </div>
         </div>
@@ -536,19 +554,19 @@
             <span class="folio-tag" aria-hidden="true">V.</span>
             <div class="eyebrow">
               <svg class="icon-sparkle" width="12" height="12" aria-hidden="true"><use href="#sparkle"></use></svg>
-              <span class="eyebrow__text">V. 审计 · THE AUDIT TRAIL</span>
+              <span data-i18n="canvas.eyebrow" class="eyebrow__text">V. 审计 · THE AUDIT TRAIL</span>
             </div>
-            <h2 id="canvas-heading" class="section-title"><span class="zh" lang="zh-CN">每一步都可回溯。</span>Every step, <em class="ital">on the record</em>.</h2>
+            <h2 id="canvas-heading" class="section-title" data-i18n="canvas.title"><span class="zh" lang="zh-CN">每一步都可回溯。</span>Every step, <em class="ital">on the record</em>.</h2>
           </div>
         </div>
 
-        <div class="canvas-viewport squircle" id="canvas-viewport" data-squircle="40" role="application" aria-label="Interactive audit trail canvas. Use arrow keys to pan, plus or minus to zoom, 0 to reset." tabindex="0" data-cursor="DRAG">
+        <div class="canvas-viewport squircle" id="canvas-viewport" data-squircle="40" role="application" aria-label="Interactive audit trail canvas. Use arrow keys to pan, plus or minus to zoom, 0 to reset." data-i18n-attr="aria-label:canvas.aria" tabindex="0" data-cursor="DRAG">
           <div class="canvas-grid-bg" id="canvas-grid-bg" aria-hidden="true"></div>
           <div class="canvas-world" id="canvas-world"></div>
           <div class="canvas-collaborators" id="canvas-collaborators" aria-hidden="true"></div>
 
           <div class="canvas-hint liquid-glass squircle" data-squircle="14" aria-hidden="true">
-            <span>DRAG TO WANDER · PINCH OR ⌘ + SCROLL TO ZOOM</span>
+            <span data-i18n="canvas.hint">DRAG TO WANDER · PINCH OR ⌘ + SCROLL TO ZOOM</span>
           </div>
 
           <div class="canvas-minimap liquid-glass squircle" id="canvas-minimap" data-squircle="14" aria-hidden="true">
@@ -569,15 +587,15 @@
           <span class="folio-tag" aria-hidden="true">VI.</span>
           <div class="eyebrow">
             <span class="live-dot"></span>
-            <span class="eyebrow__text">VI. 试用 · TRY THE AGENT</span>
+            <span data-i18n="cta.eyebrow" class="eyebrow__text">VI. 试用 · TRY THE AGENT</span>
           </div>
 
-          <h2 id="cta-heading" class="section-title"><span class="zh" lang="zh-CN">你卖什么？卖到哪里？</span>What do you sell, and <em class="ital">where</em>?</h2>
-          <p class="cta__sub">Describe the product, your unit cost, its weight and the target market. Leave something out on purpose and watch the agent ask for it.</p>
-          <p class="cta__sub"><a class="link-underline" href="/agent" data-cursor="OPEN"><span>打开完整工作台 · Open the full agent workspace →</span></a></p>
+          <h2 id="cta-heading" class="section-title" data-i18n="cta.title"><span class="zh" lang="zh-CN">你卖什么？卖到哪里？</span>What do you sell, and <em class="ital">where</em>?</h2>
+          <p class="cta__sub" data-i18n="cta.sub">Describe the product, your unit cost, its weight and the target market. Leave something out on purpose and watch the agent ask for it.</p>
+          <p class="cta__sub"><a class="link-underline" href="/agent" data-cursor="OPEN"><span data-i18n="cta.link">打开完整工作台 · Open the full agent workspace →</span></a></p>
 
           <form id="cta-form" class="cta__form" novalidate>
-            <label for="cta-email" class="sr-only">Product and target market</label>
+            <label for="cta-email" class="sr-only" data-i18n="cta.label">Product and target market</label>
             <div class="cta__input-row">
               <input
                 type="text"
@@ -585,13 +603,13 @@
                 name="prompt"
                 class="cta__input liquid-glass squircle"
                 data-squircle="24"
-                placeholder="便携榨汁杯，带电池，成本¥38，0.6kg，卖到德国，目标毛利25%"
+                placeholder="便携榨汁杯，带电池，成本¥38，0.6kg，卖到德国，目标毛利25%" data-i18n-attr="placeholder:cta.placeholder"
                 required
                 aria-describedby="cta-feedback"
                 autocomplete="off"
               />
               <button type="submit" class="btn btn--primary liquid-glass squircle" id="cta-submit" data-squircle="24" data-cursor="OPEN">
-                <span class="btn__text" id="cta-submit-text">计算到岸价</span>
+                <span class="btn__text" id="cta-submit-text" data-i18n="cta.submit">计算到岸价</span>
                 <span class="pixel-loader" id="cta-inline-loader" hidden aria-hidden="true"></span>
                 <svg class="icon-sparkle" width="14" height="14" aria-hidden="true"><use href="#sparkle"></use></svg>
               </button>
@@ -599,14 +617,15 @@
             <p id="cta-feedback" class="cta__feedback" aria-live="polite"></p>
           </form>
 
-          <div class="sample-prompts" aria-label="Sample prompts">
-            <button type="button" class="sample-chip" data-sample-prompt="500ml portable blender with built-in battery plus an extra Tritan travel cup, ¥38 total cost, 0.6 kg. What should I charge in Germany for a 25% target margin?">① EU price · 25% margin</button>
-            <button type="button" class="sample-chip" data-sample-prompt="What if the yuan strengthens 5% and returns go to 15%? Which scenario hurts my margin most?">② Stress test</button>
-            <button type="button" class="sample-chip" data-sample-prompt="Write the German listing and tell me what could block shipping or customs clearance.">③ Listing + flags</button>
-            <button type="button" class="sample-chip" data-sample-prompt="我想把一个便携榨汁杯卖到德国，成本38元，怎么定价？">④ 缺信息 · watch it ask</button>
+          <div class="sample-prompts" aria-label="Sample prompts" data-i18n-attr="aria-label:chips.aria">
+            <button type="button" class="sample-chip" data-sample-prompt="500ml portable blender with built-in battery plus an extra Tritan travel cup, ¥38 total cost, 0.6 kg. What should I charge in Germany for a 25% target margin?" data-i18n="chip.1" data-i18n-attr="data-sample-prompt:chip.1.p">① EU price · 25% margin</button>
+            <button type="button" class="sample-chip" data-sample-prompt="What if the yuan strengthens 5% and returns go to 15%? Which scenario hurts my margin most?" data-i18n="chip.2" data-i18n-attr="data-sample-prompt:chip.2.p">② Stress test</button>
+            <button type="button" class="sample-chip" data-sample-prompt="Write the German listing and tell me what could block shipping or customs clearance." data-i18n="chip.3" data-i18n-attr="data-sample-prompt:chip.3.p">③ Listing + flags</button>
+            <button type="button" class="sample-chip" data-sample-prompt="我想把一个便携榨汁杯卖到德国，成本38元，怎么定价？" data-i18n="chip.4" data-i18n-attr="data-sample-prompt:chip.4.p">④ 缺信息 · watch it ask</button>
+            <button type="button" class="sample-chip" data-only="zh" data-sample-prompt="Portable blender, cost ¥38, 0.6 kg. Competitors sell it for €29.99 on Amazon.de and I want a 25% margin. Can I make money at that price, and what is the most I can pay the factory?" data-i18n="chip.5" data-i18n-attr="data-sample-prompt:chip.5.p">⑤ It sells for €29.99 · can I profit?</button>
           </div>
 
-          <div id="agent-console" class="agent-console" data-lenis-prevent tabindex="0" role="log" aria-label="Agent conversation" aria-live="polite" hidden></div>
+          <div id="agent-console" class="agent-console" data-lenis-prevent tabindex="0" role="log" aria-label="Agent conversation" data-i18n-attr="aria-label:console.aria" aria-live="polite" hidden></div>
         </div>
       </section>
     </div>
@@ -615,7 +634,7 @@
     <footer id="site-footer" class="site-footer">
       <div class="marquee-band marquee-band--footer" aria-hidden="true">
         <div class="marquee-track" data-marquee-dir="-1">
-          <div class="marquee-item">
+          <div class="marquee-item" data-i18n="footer.marquee">
             <span>Ask, don’t guess</span><svg class="marquee-star" width="18" height="18"><use href="#sparkle"></use></svg>
             <em class="marquee-ital">Numbers from code</em><svg class="marquee-star" width="18" height="18"><use href="#sparkle"></use></svg>
             <span>Every figure sourced</span><svg class="marquee-star" width="18" height="18"><use href="#sparkle"></use></svg>
@@ -633,39 +652,39 @@
 
           <div class="footer__cols">
             <div class="footer__col">
-              <h3 class="footer__col-title">Product</h3>
-              <a href="#features">Design moves</a>
-              <a href="#process">Agent loop</a>
-              <a href="#costcard">Cost &amp; risk card</a>
-              <a href="#canvas">Audit trail</a>
+              <h3 class="footer__col-title" data-i18n="footer.col1">Product</h3>
+              <a href="#features" data-i18n="footer.l4" data-i18n-attr="href:footer.l4.href">Design moves</a>
+              <a href="#process" data-i18n="footer.l1">Agent loop</a>
+              <a href="#costcard" data-i18n="footer.l2">Cost &amp; risk card</a>
+              <a href="#canvas" data-i18n="footer.l3">Audit trail</a>
             </div>
             <div class="footer__col">
-              <h3 class="footer__col-title">Evidence</h3>
-              <a href="#logos">References</a>
-              <a href="#moat">Moat</a>
-              <a href="#manifesto">Thesis</a>
+              <h3 class="footer__col-title" data-i18n="footer.col2">Evidence</h3>
+              <a href="#logos" data-i18n="footer.l5">References</a>
+              <a href="#moat" data-i18n="footer.l6">Moat</a>
+              <a href="#manifesto" data-i18n="footer.l7">Thesis</a>
             </div>
             <div class="footer__col">
-              <h3 class="footer__col-title">Scope</h3>
-              <span>EU (27 countries, own VAT each): any product below €150</span>
-              <span>US: indicative lower-bound price, incl. 12.5% China Section 301 duty; base duty verified for 9 product lines</span>
-              <span>Snapshot 2026-11-08</span>
+              <h3 class="footer__col-title" data-i18n="footer.col3">Scope</h3>
+              <span data-i18n="footer.s1">EU (27 countries, own VAT each): any product below €150</span>
+              <span data-i18n="footer.s2">US: indicative lower-bound price, incl. 12.5% China Section 301 duty; base duty verified for 9 product lines</span>
+              <span data-i18n="footer.s3">Snapshot 2026-11-08</span>
             </div>
             <div class="footer__col">
-              <h3 class="footer__col-title">Notice</h3>
-              <span>Decision support, not customs brokerage. Verify before shipping.</span>
+              <h3 class="footer__col-title" data-i18n="footer.col4">Notice</h3>
+              <span data-i18n="footer.s4">Decision support, not customs brokerage. Verify before shipping.</span>
             </div>
           </div>
         </div>
 
-        <div class="footer__wordmark" id="footer-wordmark" aria-hidden="true">
+        <div class="footer__wordmark" id="footer-wordmark" aria-hidden="true" data-i18n="footer.wordmark">
           <span>L</span><span>a</span><span>n</span><span>d</span><span>e</span><span>d</span>
         </div>
 
         <div class="footer__bottom">
           <div class="footer__status">
             <span class="live-dot"></span>
-            <span>NUMBERS FROM CODE · NO LLM IN THE MATH</span>
+            <span data-i18n="footer.status">NUMBERS FROM CODE · NO LLM IN THE MATH</span>
           </div>
           <div class="footer__legal">
             © <span data-config="YEAR_ROMAN">MMXXVI</span> <span data-config="BRAND_NAME">LANDED</span>
@@ -674,6 +693,12 @@
       </div>
     </footer>
   </main>
+
+  <div class="lang-fab liquid-glass squircle" data-squircle="22" role="group" aria-label="语言 / Language">
+    <button type="button" class="lang-fab__btn" data-lang-switch="zh" lang="zh-CN">中文</button>
+    <button type="button" class="lang-fab__btn" data-lang-switch="en" lang="en">EN</button>
+  </div>
+  <div class="sr-only" id="lang-announce" aria-live="polite"></div>
 
   <!-- Custom Cursor -->
   <div id="custom-cursor" class="custom-cursor" aria-hidden="true">

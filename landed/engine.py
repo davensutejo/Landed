@@ -112,6 +112,13 @@ def build_params(x: Inputs) -> Params:
         raise EngineError("fx must be positive (CNY per unit of the destination currency)")
     if x.freight_cny_per_kg is not None and x.freight_cny_per_kg < 0:
         raise EngineError("freight_cny_per_kg cannot be negative")
+    # Sanity ceilings far beyond any real parcel, so overflow (1e308) can never reach the maths as inf/NaN.
+    for name, v, hi in (("cogs_cny", x.cogs_cny, 1e7), ("weight_kg", x.weight_kg, 1000), ("fx", x.fx, 1000),
+                        ("freight_cny_per_kg", x.freight_cny_per_kg, 1e5)):
+        if v is not None and v > hi:
+            raise EngineError(f"{name} must be at most {hi:g}")
+    if x.fx is not None and x.fx < 1e-3:
+        raise EngineError("fx must be at least 0.001 (CNY per unit of the destination currency)")
     if not isinstance(x.item_categories, int) or not 1 <= x.item_categories <= 50:
         raise EngineError("item_categories must be a whole number from 1 to 50")
     m = MARKETS[x.market]
@@ -437,6 +444,147 @@ def landed_cost(x: Inputs) -> dict:
             "price_reduction": round(wf["price"] - alt_price, 2),
             "caveat": "Set classification is a judgment call; confirm with a customs broker or BTI ruling before shipping.",
         }
+    return out
+
+
+def _mean_return(p: Params) -> float:
+    return p.ret_alpha / (p.ret_alpha + p.ret_beta)
+
+
+def _profit_at(p: Params, price: float) -> tuple[float, float]:
+    """Expected profit and margin per unit at a given list price (FX and returns at their means)."""
+    net = price / (1 + p.vat)
+    profit = net - p.fee * price - p.fee_fixed - _goods_cost(p, p.fx_mean) * (1 + _mean_return(p))
+    return profit, profit / net
+
+
+def _max_cogs(p: Params, price: float, margin: float) -> float | None:
+    """Highest unit cost in CNY that still earns `margin` at list price `price`, everything else unchanged.
+    Inverts price = (G(1 + r) + fee_fixed) / denom for G, then G for COGS. None if no cost is low enough."""
+    denom = 1 / (1 + p.vat) - p.fee - margin / (1 + p.vat)
+    G = (price * denom - p.fee_fixed) / (1 + _mean_return(p))
+    if p.duty_mode == "eu_flat":
+        cogs = (G - p.duty_flat) * p.fx_mean - p.freight_cny
+    else:  # G = (cogs + freight) / fx + cogs / fx * duty
+        cogs = (G * p.fx_mean - p.freight_cny) / (1 + p.duty_rate)
+    return round(cogs, 2) if cogs > 0 else None
+
+
+def price_check(x: Inputs, list_price: float) -> dict:
+    """The reverse question: "it sells for list_price, can I make money?". Margin and risk at that price
+    for the seller's unit cost, and the highest unit cost that still hits the target margin or breaks even."""
+    if not isinstance(list_price, (int, float)) or isinstance(list_price, bool) or not math.isfinite(list_price) or list_price <= 0:
+        raise EngineError("list_price must be a positive number")
+    p = build_params(x)
+    _check_flat_ceiling(p, list_price)
+    profit, margin = _profit_at(p, list_price)
+    sim = simulate(p, list_price, x.paths, x.seed)
+    sim.pop("histogram", None)
+    sim.pop("floor_price_95", None)  # that is the price for the target, not a property of this price
+    return {
+        "currency": p.currency,
+        "market": x.market,
+        "list_price": round(list_price, 2),
+        "target_margin": x.target_margin,
+        "cogs_cny": x.cogs_cny,
+        "profit_per_unit": round(profit, 2),
+        "margin_pct": round(margin, 4),
+        "monte_carlo": sim,
+        "max_cogs_for_target": _max_cogs(p, list_price, x.target_margin),
+        "max_cogs_break_even": _max_cogs(p, list_price, 0.0),
+        "target_price": round(waterfall(p)["price"], 2),
+        "warnings": [w for w in p.warnings if not w.startswith("No HS code given")],
+    }
+
+
+def compare_eu(x: Inputs, list_price: float | None = None) -> dict:
+    """Same product, every EU country: the price that hits the target margin there and, at one shared
+    list price (the seller's, or the target price in x.market), the profit per unit. Countries differ by
+    VAT and by whether the seller's platform is sold there."""
+    if x.market not in EU_COUNTRIES:
+        raise EngineError("The EU comparison needs an EU market")
+    base = build_params(x)
+    if list_price is None:
+        list_price = waterfall(base)["_price_exact"]
+    if not isinstance(list_price, (int, float)) or isinstance(list_price, bool) or not math.isfinite(list_price) or list_price <= 0:
+        raise EngineError("list_price must be a positive number")
+    rows = []
+    for c in EU_COUNTRIES:
+        q = build_params(replace(x, market=c))
+        row = {"market": c, "vat": q.vat, "fee": round(q.fee, 4),
+               "platform_sold": not any("is not sold in" in w for w in q.warnings)}
+        price = waterfall(q)["_price_exact"]
+        row["target_price"] = round(price, 2) if price <= q.flat_threshold else None
+        if list_price <= q.flat_threshold:
+            profit, margin = _profit_at(q, list_price)
+            row.update(profit_at_list=round(profit, 2), margin_at_list=round(margin, 4))
+        else:
+            row.update(profit_at_list=None, margin_at_list=None)
+        rows.append(row)
+    rows.sort(key=lambda r: (r["profit_at_list"] is None, -(r["profit_at_list"] or 0), r["market"]))
+    return {"currency": "EUR", "list_price": round(list_price, 2), "target_margin": x.target_margin,
+            "market": x.market, "rows": rows}
+
+
+INPUT_FIELDS = {f for f in Inputs.__dataclass_fields__ if f not in ("paths", "seed")}
+
+
+def baseline_of(res: dict) -> dict:
+    """What a saved product remembers about its price: the result and every sourced rate behind it."""
+    wf, mc = res["waterfall"], res["monte_carlo"]
+    return {
+        "price": wf["price"],
+        "currency": wf["currency"],
+        "margin_pct": wf["margin_pct"],
+        "p_loss": mc["p_loss"],
+        "floor_price_95": mc["floor_price_95"],
+        # the seller's own figures are not rates that can move under them
+        "rates": {p["key"]: {"value": p["value"], "snapshot_date": p["snapshot_date"], "label": p["label"], "unit": p.get("unit")}
+                  for p in res["provenance"] if p.get("key") and p.get("status") != "seller_input"},
+    }
+
+
+def _check_summary(x: Inputs, price: float) -> dict | None:
+    try:
+        r = price_check(x, price)
+    except (data.MissingRate, EngineError):
+        return None
+    return {"price": r["list_price"], "profit_per_unit": r["profit_per_unit"], "margin_pct": r["margin_pct"],
+            "p_loss": r["monte_carlo"]["p_loss"], "max_cogs_for_target": r["max_cogs_for_target"]}
+
+
+def review_saved(calc: dict, baseline: dict | None = None, check_price: float | None = None) -> dict:
+    """Re-price a saved product against today's rates and say what moved since it was saved.
+
+    status: unchanged | changed | no_baseline | abstain | error. The margin at the saved price is what the
+    seller earns now if they keep their listing as it is; the target price is what to charge to get the
+    margin back."""
+    try:
+        x = Inputs(**{k: v for k, v in (calc or {}).items() if k in INPUT_FIELDS})
+        res = landed_cost(x)
+    except data.MissingRate as e:
+        return {"status": "abstain", "error": str(e)}
+    except (EngineError, TypeError, ValueError) as e:
+        return {"status": "error", "error": str(e)}
+    now = baseline_of(res)
+    out = {"status": "no_baseline", "market": x.market, "currency": now["currency"], "target_margin": x.target_margin,
+           "target_price": now["price"], "p_loss": now["p_loss"], "current_baseline": now, "changes": []}
+    old_price = (baseline or {}).get("price")
+    if isinstance(old_price, (int, float)) and not isinstance(old_price, bool) and math.isfinite(old_price) and old_price > 0 \
+            and baseline.get("currency") == now["currency"]:
+        old_rates = baseline.get("rates") if isinstance(baseline.get("rates"), dict) else {}
+        for key, r in now["rates"].items():
+            old = old_rates.get(key)
+            before = old.get("value") if isinstance(old, dict) else None
+            if isinstance(before, (int, float)) and r["value"] is not None and abs(before - r["value"]) > 1e-9:
+                out["changes"].append({"key": key, "label": r["label"], "unit": r["unit"], "before": before, "after": r["value"],
+                                       "snapshot_date": r["snapshot_date"]})
+        out["saved"] = {"price": round(old_price, 2), "margin_pct": baseline.get("margin_pct")}
+        out["at_saved_price"] = _check_summary(x, old_price)
+        moved = abs(now["price"] - old_price) >= 0.005
+        out["status"] = "changed" if out["changes"] or moved else "unchanged"
+    if isinstance(check_price, (int, float)) and not isinstance(check_price, bool) and math.isfinite(check_price) and check_price > 0:
+        out["at_check_price"] = _check_summary(x, check_price)
     return out
 
 

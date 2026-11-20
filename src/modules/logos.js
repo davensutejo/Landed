@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import gsap from 'gsap';
+import { isZh, onLang } from '../i18n.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { createManagedRenderer } from '../lib/gl.js';
 import { isReducedMotion } from '../lib/a11y.js';
 
 // The fragments a seller stitches together today. Each becomes one table row
 // with source_url + snapshot_date in Landed.
-const STUDIOS = [
+const STUDIOS_ZH = ['欧盟 TARIC 税则', '美国 HTS 税则', '美国 CBP 预裁定', '欧盟 BTI 裁定', 'WCO 归类总规则', '欧盟增值税 · IOSS', '欧洲央行汇率', 'IATA PI 967', '物流商报价', '平台佣金表'];
+const STUDIOS_EN = [
   'EU TARIC',
   'USITC HTS',
   'CBP CROSS rulings',
@@ -19,6 +21,7 @@ const STUDIOS = [
   'Carrier rate cards',
   'Platform fee tables'
 ];
+const studios = () => (isZh() ? STUDIOS_ZH : STUDIOS_EN);
 
 export function initLogos(onFrame) {
   const grid = document.getElementById('logos-grid');
@@ -26,7 +29,7 @@ export function initLogos(onFrame) {
   if (!grid) return;
 
   // Build 10 squircle studio wordmark tiles with internal corner sparkles
-  const tiles = STUDIOS.map((name, i) => {
+  const tiles = studios().map((name, i) => {
     const tile = document.createElement('div');
     tile.className = 'logo-tile squircle';
     tile.dataset.squircle = '24';
@@ -123,32 +126,48 @@ export function initLogos(onFrame) {
     }
   }
 
-  // Stats count-up on viewport entry
+  // Stats count-up on viewport entry. Prefix and suffix are read on every update: a language switch
+  // changes them (¥2.84T → 2.84万亿元).
+  const counters = [];
   document.querySelectorAll('.stat-box__num').forEach((numEl) => {
     const target = parseFloat(numEl.dataset.count || '0');
-    const suffix = numEl.dataset.suffix || '';
-    const prefix = numEl.dataset.prefix || '';
     const decimals = parseInt(numEl.dataset.decimals || '0', 10);
-    const counter = { val: 0 };
+    const counter = { val: 0, started: false };
+    const write = () => {
+      const formatted =
+        decimals > 0
+          ? counter.val.toFixed(decimals)
+          : Math.round(counter.val).toLocaleString('en-US');
+      numEl.textContent = `${numEl.dataset.prefix || ''}${formatted}${numEl.dataset.suffix || ''}`;
+    };
+    counters.push({ counter, write });
 
     ScrollTrigger.create({
       trigger: numEl,
       start: 'top 88%',
       once: true,
       onEnter: () => {
+        counter.started = true;
         gsap.to(counter, {
           val: target,
           duration: 1.4,
           ease: 'medici',
-          onUpdate: () => {
-            const formatted =
-              decimals > 0
-                ? counter.val.toFixed(decimals)
-                : Math.round(counter.val).toLocaleString('en-US');
-            numEl.textContent = `${prefix}${formatted}${suffix}`;
-          }
+          onUpdate: write
         });
       }
     });
+  });
+
+  // Language switch: tile words in place (the tiles keep their reveal and hover state), and any
+  // number that has already counted is re-written with the new prefix and suffix
+  onLang({
+    apply: () => {
+      const names = studios();
+      tiles.forEach((tile, i) => {
+        const w = tile.querySelector('.logo-tile__word');
+        if (w) w.textContent = names[i];
+      });
+      counters.forEach((c) => c.counter.started && c.write());
+    }
   });
 }

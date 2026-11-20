@@ -425,3 +425,75 @@ def test_tool_call_text_every_time_gives_a_plain_apology(monkeypatch):
     ev = list(agent.run([{"role": "user", "content": "hello there"}]))
     answers = [e["text"] for e in ev if e["type"] == "answer"]
     assert len(answers) == 1 and "DSML" not in answers[0] and "again" in answers[0].lower()
+
+
+# ------------------------------------------------------------------ price_check / compare_eu chat tools
+CHECK_ARGS = {"market": "DE", "cogs_cny": 38, "weight_kg": 0.6, "target_margin": 0.25, "list_price": 29.99}
+CHECK_MSG = "便携榨汁杯成本38元，0.6kg，德国卖 29,99 €，目标毛利25%，能赚钱吗？"
+
+
+def test_price_check_tool_runs_and_quoted_figures_pass_the_guardrail(monkeypatch):
+    script = [
+        NS(content="", tool_calls=[_call(1, "price_check", CHECK_ARGS)]),
+        NS(content="按 €29.99 卖每件赚 €8.04（31.9%），高于 25% 目标。要保住 25% 毛利，单件成本最多 ¥49.99，"
+                   "保本最多 ¥93.44；你的成本 ¥38.00。达到 25% 的售价是 €26.37。", tool_calls=None),
+    ]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": CHECK_MSG}])
+    res = events[1]["result"]
+    assert events[1]["name"] == "price_check" and res["list_price"] == 29.99
+    assert res["max_cogs_for_target"] == 49.99
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "answer", "done"]  # no guardrail warning
+
+
+def test_price_check_display_block_is_what_the_model_sees(monkeypatch):
+    script = [NS(content="", tool_calls=[_call(1, "price_check", CHECK_ARGS)]), NS(content="ok", tool_calls=None)]
+    _, fake = run_with(monkeypatch, script, [{"role": "user", "content": CHECK_MSG}])
+    tool_msg = next(m for m in fake.seen[-1]["messages"] if m["role"] == "tool")
+    d = json.loads(tool_msg["content"])["display"]
+    assert d["max_unit_cost_for_target"] == "¥49.99" and d["verdict"] == "meets_target"
+    assert d["profit_per_unit"] == "€8.04" and d["target_price"] == "€26.37"
+
+
+def test_price_check_refuses_an_invented_price(monkeypatch):
+    script = [
+        NS(content="", tool_calls=[_call(1, "price_check", {**CHECK_ARGS, "list_price": 34.99})]),
+        NS(content="Which price should I check?", tool_calls=None),
+    ]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": CHECK_MSG}])
+    assert events[1]["result"]["status"] == "needs_input" and events[1]["result"]["missing"] == ["list_price"]
+
+
+def test_price_check_without_a_price_asks():
+    assert agent.list_price_guard("price_check", {k: v for k, v in CHECK_ARGS.items() if k != "list_price"}, [CHECK_MSG])["missing"] == ["list_price"]
+
+
+def test_compare_eu_tool(monkeypatch):
+    msg = "Cost ¥38, 0.6 kg, 25% margin. Which EU country is best to sell in?"
+    args = {"market": "DE", "cogs_cny": 38, "weight_kg": 0.6, "target_margin": 0.25}
+    script = [NS(content="", tool_calls=[_call(1, "compare_eu", args)]), NS(content="ok", tool_calls=None)]
+    events, fake = run_with(monkeypatch, script, [{"role": "user", "content": msg}])
+    assert len(events[1]["result"]["rows"]) == 27
+    seen = json.loads(next(m for m in fake.seen[-1]["messages"] if m["role"] == "tool")["content"])
+    assert seen["best"][0].startswith("Luxembourg") and seen["worst"].startswith("Hungary") and seen["reference_country"].startswith("Germany")
+    # a list price the seller never gave is refused, so the model compares at the target price instead
+    script = [NS(content="", tool_calls=[_call(1, "compare_eu", {**args, "list_price": 24.99})]), NS(content="ok", tool_calls=None)]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": msg}])
+    assert events[1]["result"]["status"] == "needs_input"
+
+
+def test_compare_eu_needs_an_eu_market(monkeypatch):
+    msg = "Cost ¥38, 0.6 kg, US, 25% margin, compare countries"
+    script = [NS(content="", tool_calls=[_call(1, "compare_eu", {"market": "US", "cogs_cny": 38, "weight_kg": 0.6, "target_margin": 0.25})]),
+              NS(content="ok", tool_calls=None)]
+    events, _ = run_with(monkeypatch, script, [{"role": "user", "content": msg}])
+    assert events[1]["result"]["status"] == "error"
+
+
+def test_compare_eu_display_lists_every_country_with_its_own_vat():
+    from landed import tools
+    seen, _ = tools.dispatch("compare_eu", {"market": "SE", "cogs_cny": 30, "weight_kg": 0.4, "target_margin": 0.25})
+    lines = seen["all_countries_ranked"]
+    assert len(lines) == 27
+    fi = next(x for x in lines if "Finland" in x)
+    se = next(x for x in lines if "Sweden" in x)
+    assert "VAT 25.5%" in fi and "VAT 25%" in se and fi.split("profit")[1] != se.split("profit")[1]

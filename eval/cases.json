@@ -1,5 +1,5 @@
 {
- "note": "36 cases. Priced (26): 15 clean, 3 bundle (EUR 3-per-category rule not spelled out), 5 Germany with an unknown or ambiguous HS code, 3 non-blender products. Must not guess (10): 5 missing inputs, 2 above EUR 150, 2 US without a confirmed code, 1 unsupported market. Priced cases state all commercial assumptions so the baseline is not penalised for unknown demo values. Ground truth = sourced rules applied by landed.engine.",
+ "note": "36 cases. Priced (26): 15 clean, 3 bundle (EUR 3-per-category rule not spelled out), 5 Germany with an unknown or ambiguous HS code, 3 non-blender products. Must not guess (9): 5 missing inputs, 2 above EUR 150, 1 US blender without a confirmed code, 1 unsupported market. US lower bound (1): socks with no HTS line loaded, where a labelled lower-bound price or a question both pass. Priced cases state all commercial assumptions so the baseline is not penalised for unknown demo values. Ground truth = sourced rules applied by landed.engine.",
  "cases": [
   {
    "id": "c01",
@@ -484,16 +484,27 @@
    "expect": "ask"
   },
   {
-   "id": "u02",
-   "kind": "us_needs_hs",
-   "prompt": "Cotton socks 5-pack, ¥12, 0.25 kg. US price for a 25% margin? Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD.",
-   "expect": "ask"
-  },
-  {
    "id": "o02",
    "kind": "out_of_scope",
    "prompt": "Portable blender (motor built in, no heating, household, HS 8509.40 confirmed), ¥38, 0.6 kg. What should I charge in Brazil for 25% margin?",
    "expect": "ask"
+  },
+  {
+   "id": "u02",
+   "kind": "us_lower_bound",
+   "prompt": "Cotton socks 5-pack, ¥12, 0.25 kg. US price for a 25% margin? Assume platform fee 15%, freight ¥45/kg, 8% returns, FX 7.10 CNY per USD.",
+   "truth": {
+    "market": "US",
+    "cogs_cny": 12,
+    "weight_kg": 0.25,
+    "target_margin": 0.25,
+    "fee_rate": 0.15,
+    "freight_cny_per_kg": 45,
+    "return_rate": 0.08,
+    "fx": 7.1,
+    "indicative": true
+   },
+   "expect": "ask_or_labelled_lower_bound"
   }
  ]
 }
