@@ -17,6 +17,7 @@ from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
 from . import guardrail
 from . import hs as hs_mod
 from . import platforms as platforms_mod
+from . import product_facts
 from . import profile as profile_mod
 from .markets import EU_COUNTRIES, listing_language_rule
 from .tools import TOOLS, dispatch
@@ -476,6 +477,14 @@ def apply_stated(name: str, args: dict, seller_texts: list[str]) -> tuple[dict, 
     return {**args, **{k: c["seller"] for k, c in changes.items()}}, changes
 
 
+def apply_facts(args: dict, seller_texts: list[str]) -> tuple[dict, dict]:
+    """Product facts the seller's words make certain (battery, food contact, textile…) win over what the model
+    passed to compliance_flags. Returns (args, changes)."""
+    facts = product_facts.stated(seller_texts)
+    changes = {k: {"model": args.get(k), "seller": v} for k, v in facts.items() if args.get(k) != v}
+    return ({**args, **facts}, changes) if changes else (args, {})
+
+
 # Tools that price with the engine: the same profile defaults, platform rule and input guard apply to all.
 PRICING_TOOLS = ("landed_cost", "price_check", "compare_eu")
 _DECIMAL_COMMA = re.compile(r"(\d),(\d{1,2})(?!\d)")
@@ -547,6 +556,9 @@ def run(history: list[dict], use_tools: bool = True, profile: dict | None = None
 
     seller_confirmed_hs = bool(HS_IN_TEXT.search(last_user))
     user_texts = [m["content"] for m in history if m.get("role") in ("user", "assistant")]
+    seller_only = [m["content"] for m in history if m.get("role") == "user"]
+    compliance_done = False  # compliance_flags ran this turn
+    priced = None  # (tool name, args, tool message) of this turn's last successful pricing call
     retried = False
     refusals = 0  # guard refusals this turn; after two the model must answer without tools
     leaks = 0  # tool calls the model wrote as text
@@ -619,6 +631,11 @@ def run(history: list[dict], use_tools: bool = True, profile: dict | None = None
             args, corrected = apply_stated(c.function.name, args, [m["content"] for m in history if m.get("role") == "user"])
             if corrected:
                 trace.setdefault("stated_overrides", []).append(corrected)
+            if c.function.name == "compliance_flags":
+                compliance_done = True
+                args, fixed = apply_facts(args, seller_only)
+                if fixed:
+                    trace.setdefault("fact_overrides", []).append(fixed)
             args = apply_profile(c.function.name, args, profile)
             if c.function.name in PRICING_TOOLS:
                 said = platform_in(" ".join(m["content"] for m in history if m.get("role") == "user"))
@@ -651,7 +668,10 @@ def run(history: list[dict], use_tools: bool = True, profile: dict | None = None
             tool_results.append(for_llm)
             trace["calls"].append({"name": c.function.name, "args": args, "ms": round((time.time() - t0) * 1000)})
             yield {"type": "tool_result", "name": c.function.name, "result": for_ui}
-            messages.append({"role": "tool", "tool_call_id": c.id, "content": json.dumps(for_llm, ensure_ascii=False)})
+            tool_msg = {"role": "tool", "tool_call_id": c.id, "content": json.dumps(for_llm, ensure_ascii=False)}
+            messages.append(tool_msg)
+            if c.function.name in PRICING_TOOLS and not blocked and any(k in for_ui for k in ("waterfall", "rows", "monte_carlo")):
+                priced = (c.function.name, args, tool_msg)
 
         # The UI renders a question card or input form for these results. End the turn with a
         # fixed one-liner instead of letting the model restate the question in prose. Skipped when
@@ -665,5 +685,29 @@ def run(history: list[dict], use_tools: bool = True, profile: dict | None = None
             yield {"type": "answer", "text": answer}
             yield {"type": "done", "steps": step + 1}
             return
+
+        # A price always comes with its must-do list. If the model priced without calling compliance_flags,
+        # run it here, so the workspace never keeps the checklist of the product before.
+        if priced and not compliance_done:
+            compliance_done = True
+            name, pargs, tool_msg = priced
+            cargs, _ = apply_facts({"market": pargs["market"]}, seller_only)
+            if pargs["market"] in EU_COUNTRIES and pargs.get("item_categories"):
+                cargs["item_categories"] = pargs["item_categories"]
+            cargs = apply_profile("compliance_flags", cargs, profile)
+            yield {"type": "tool_call", "name": "compliance_flags", "args": cargs, "auto": True}
+            for_llm, for_ui = dispatch("compliance_flags", cargs)
+            tool_results.append(for_llm)
+            trace["calls"].append({"name": "compliance_flags", "args": cargs, "auto": True})
+            yield {"type": "tool_result", "name": "compliance_flags", "result": for_ui}
+            if name == "landed_cost":
+                # a tool message must answer its own call, so the flags ride along with the price
+                body = json.loads(tool_msg["content"])
+                body["compliance_flags"] = {
+                    **for_llm,
+                    "instruction": "compliance_flags was run for this product already: use these flags for the "
+                                   "must-do lines and do not call compliance_flags again.",
+                }
+                tool_msg["content"] = json.dumps(body, ensure_ascii=False)
 
     yield {"type": "error", "message": "Step limit reached"}

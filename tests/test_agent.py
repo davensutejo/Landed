@@ -42,9 +42,13 @@ def test_tool_loop_and_guardrail(monkeypatch):
     ]
     events, fake = run_with(monkeypatch, script, [{"role": "user", "content": "blender ¥38 0.6kg DE 25%"}])
     types = [e["type"] for e in events]
-    assert types == ["tool_call", "tool_result", "tool_call", "tool_result", "answer", "guardrail", "done"]
+    # the model priced without compliance_flags, so the code ran it (the blender's food-contact rule included)
+    assert types == ["tool_call", "tool_result", "tool_call", "tool_result", "tool_call", "tool_result", "answer", "guardrail", "done"]
     assert events[3]["result"]["waterfall"]["price"] == 33.12
-    assert events[5]["unverified"] == ["€49.99"]
+    assert events[4]["name"] == "compliance_flags" and events[4]["auto"] is True
+    assert events[4]["args"] == {"market": "DE", "food_contact": True, "electrical": True, "item_categories": 2}
+    assert "food_contact_eu" in {f["id"] for f in events[5]["result"]["flags"]}
+    assert events[7]["unverified"] == ["€49.99"]
     assert "guardrail" in fake.seen[-1]["messages"][-1]["content"].lower()
     assert "tools" not in fake.seen[-1]
     # tool results were fed back to the model with matching ids
@@ -491,7 +495,9 @@ def test_price_check_tool_runs_and_quoted_figures_pass_the_guardrail(monkeypatch
     res = events[1]["result"]
     assert events[1]["name"] == "price_check" and res["list_price"] == 29.99
     assert res["max_cogs_for_target"] == 49.99
-    assert [e["type"] for e in events] == ["tool_call", "tool_result", "answer", "done"]  # no guardrail warning
+    # no guardrail warning; the checklist for the workspace was run in code
+    assert [e["type"] for e in events] == ["tool_call", "tool_result", "tool_call", "tool_result", "answer", "done"]
+    assert events[2]["name"] == "compliance_flags" and events[2].get("auto")
 
 
 def test_price_check_display_block_is_what_the_model_sees(monkeypatch):
