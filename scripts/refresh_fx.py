@@ -6,54 +6,40 @@
 Updates: fx_cny_per_eur, fx_cny_per_usd (EUR/CNY divided by EUR/USD) and fx_horizon_sd (std of
 42-trading-day log changes in EUR/CNY over the last two years). Standard library only.
 After a refresh, rebuild the front end (npm run build). The tests pin FX, so they do not move.
+
+A running server also refreshes these three rates in memory every day (landed/fx.py); this script moves
+the snapshot that ships in the repository, which the server starts from.
 """
 from __future__ import annotations
 
 import csv
-import math
 import re
-import statistics
 import sys
-import urllib.request
-from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-API = "https://data-api.ecb.europa.eu/service/data/EXR/D.{cur}.EUR.SP00.A?startPeriod={start}&format=csvdata"
-SOURCE = "https://data-api.ecb.europa.eu/service/data/EXR/D.CNY.EUR.SP00.A"
-HORIZON = 42  # trading days, about 60 calendar days
+sys.path.insert(0, str(ROOT))
 
+from landed import fx  # noqa: E402
 
-def series(cur: str, start: str) -> dict[str, float]:
-    with urllib.request.urlopen(API.format(cur=cur, start=start), timeout=60) as r:
-        rows = csv.DictReader(r.read().decode("utf-8").splitlines())
-        return {x["TIME_PERIOD"]: float(x["OBS_VALUE"]) for x in rows if x["OBS_VALUE"]}
+SOURCE = fx.SOURCE
 
 
 def main(dry: bool) -> None:
-    start = (date.today() - timedelta(days=730)).isoformat()
-    cny, usd = series("CNY", start), series("USD", start)
-    days = sorted(set(cny) & set(usd))
-    if len(days) < 300:
-        raise SystemExit(f"ECB returned only {len(days)} common days; not updating")
-    last = days[-1]
-    eur_cny = cny[last]
-    usd_cny = round(eur_cny / usd[last], 4)
-    logs = [math.log(cny[days[i + HORIZON]] / cny[days[i]]) for i in range(len(days) - HORIZON)]
-    sd = round(statistics.pstdev(logs), 3)
-    print(f"ECB {last}: EUR/CNY {eur_cny}, USD/CNY {usd_cny}, 60-day sd {sd} ({len(logs)} windows from {days[0]})")
+    try:
+        res = fx.fetch()
+    except ValueError as e:
+        raise SystemExit(f"{e}; not updating")
+    last, updates = res["date"], res["rows"]
+    eur_cny, usd_cny, sd = (updates[k][0] for k in ("fx_cny_per_eur", "fx_cny_per_usd", "fx_horizon_sd"))
+    print(f"ECB {last}: EUR/CNY {eur_cny}, USD/CNY {usd_cny}, 60-day sd {sd} ({res['windows']} windows from {res['first_day']})")
     if dry:
         return
 
     p = ROOT / "data/rates.csv"
     rows = list(csv.reader(p.open(encoding="utf-8", newline="")))
     ix = {h: i for i, h in enumerate(rows[0])}
-    pretty = date.fromisoformat(last).strftime("%-d %b %Y") if sys.platform != "win32" else date.fromisoformat(last).strftime("%d %b %Y").lstrip("0")
-    updates = {
-        "fx_cny_per_eur": (eur_cny, f"ECB euro foreign exchange reference rate, EUR/CNY, {pretty} (published daily). Your bank or payment provider adds a spread."),
-        "fx_cny_per_usd": (usd_cny, f"Cross rate from the ECB reference rates of {pretty}: EUR/CNY {eur_cny} divided by EUR/USD {usd[last]}. Your bank or payment provider adds a spread."),
-        "fx_horizon_sd": (sd, f"Standard deviation of {HORIZON}-trading-day log changes in the ECB EUR/CNY reference rate, {days[0]} to {last} ({len(logs)} overlapping windows). The USD/CNY cross is calmer, so this is conservative for the US."),
-    }
+    pretty = fx.pretty(last)
     for r in rows[1:]:
         if r[ix["key"]] in updates:
             v, note = updates[r[ix["key"]]]

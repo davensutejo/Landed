@@ -527,6 +527,10 @@ def compare_eu(x: Inputs, list_price: float | None = None) -> dict:
 
 
 INPUT_FIELDS = {f for f in Inputs.__dataclass_fields__ if f not in ("paths", "seed")}
+# Relative moves a saved product shrugs off: daily FX noise and a small re-estimate of FX volatility.
+# Any other rate that changes at all is a real change (a VAT, duty or fee is not noise).
+NOISE = {"fx_cny_per_eur": 0.005, "fx_cny_per_usd": 0.005, "fx_horizon_sd": 0.10}
+PRICE_NOISE = 0.005  # the target price moved by half a percent or more
 
 
 def baseline_of(res: dict) -> dict:
@@ -581,8 +585,11 @@ def review_saved(calc: dict, baseline: dict | None = None, check_price: float | 
                                        "snapshot_date": r["snapshot_date"]})
         out["saved"] = {"price": round(old_price, 2), "margin_pct": baseline.get("margin_pct")}
         out["at_saved_price"] = _check_summary(x, old_price)
-        moved = abs(now["price"] - old_price) >= 0.005
-        out["status"] = "changed" if out["changes"] or moved else "unchanged"
+        # FX now refreshes daily (landed.fx), so it always drifts a little. Every change stays in `changes`,
+        # but a drift below the noise floor does not flag the product: only a real move does.
+        moved = abs(now["price"] - old_price) / old_price >= PRICE_NOISE
+        material = [c for c in out["changes"] if abs(c["after"] - c["before"]) > NOISE.get(c["key"], 0) * abs(c["before"])]
+        out["status"] = "changed" if material or moved else "unchanged"
     if isinstance(check_price, (int, float)) and not isinstance(check_price, bool) and math.isfinite(check_price) and check_price > 0:
         out["at_check_price"] = _check_summary(x, check_price)
     return out

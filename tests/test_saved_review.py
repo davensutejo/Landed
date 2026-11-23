@@ -32,6 +32,22 @@ def test_unchanged_when_rates_have_not_moved():
     assert r["at_saved_price"]["margin_pct"] == pytest.approx(0.25, abs=5e-4)
 
 
+@pytest.mark.parametrize("factor", [0.998, 1.003])
+def test_daily_fx_noise_is_listed_but_does_not_flag_the_product(monkeypatch, factor):
+    # FX refreshes every day now; a 0.2-0.3% drift must not put a warning on every saved product
+    base = _baseline()
+    shift(monkeypatch, fx_cny_per_eur=factor)
+    r = engine.review_saved(CALC, base)
+    assert r["status"] == "unchanged"
+    assert any(c["key"] == "fx_cny_per_eur" for c in r["changes"])  # still visible to anyone who looks
+
+
+def test_any_vat_change_flags_even_a_tiny_one(monkeypatch):
+    base = _baseline()
+    shift(monkeypatch, vat_standard=1.001)
+    assert engine.review_saved(CALC, base)["status"] == "changed"
+
+
 def test_fx_move_is_reported_with_the_margin_it_costs(monkeypatch):
     base = _baseline()
     shift(monkeypatch, fx_cny_per_eur=0.95)  # yuan strengthens 5%

@@ -62,7 +62,7 @@ flowchart TD
     subgraph DeterministicCore ["⚙️ Deterministic Calculation & Rules Core"]
         Engine["Tariff & Cost Waterfall Engine (landed/engine.py)\n• EU 27 VAT Rates & €3 Flat Duty Regime (≤ €150)\n• US Section 301 China Tariffs (12.5%)\n• 5,000-Path Monte Carlo Simulation (FX ~ N, Returns ~ Beta)"]:::engine
         HSEntropy["HS Code Disambiguation (landed/hs.py)\n• Min-Expected Entropy Question Selection"]:::engine
-        ECBSync["FX Snapshot (scripts/refresh_fx.py)\n• ECB Reference Rates & 60-Day Volatility"]:::engine
+        ECBSync["Live FX (landed/fx.py)\n• ECB Reference Rates, refreshed daily & 60-Day Volatility"]:::engine
         ComplianceRules["Compliance Knowledge Base (data/compliance.json)\n• GPSR, PPWR Packaging, WEEE, UN 3481 Batteries"]:::engine
     end
 
@@ -80,7 +80,7 @@ flowchart TD
     ToolDispatch --> Engine
     ToolDispatch --> HSEntropy
     ToolDispatch --> ComplianceRules
-    ECBSync -.->|Manual Refresh| Engine
+    ECBSync -.->|Daily Refresh| Engine
 
     Engine --> ToolDispatch
     HSEntropy --> ToolDispatch
@@ -233,6 +233,7 @@ Landed is built as an auditable pricing and compliance copilot: the model talks,
   - **EU GPSR & PPWR:** flags the PPWR packaging producer registration (an EU regulation, applied from 12 Aug 2026, but registration is per country, with an authorised representative in each) (`secondary` source).
   - **Batteries:** flags IATA Packing Instruction 967 / UN 3481 for equipment containing lithium-ion cells.
   - **Food contact & WEEE:** a food-contact declaration for kitchenware, and WEEE producer registration (in each destination country) for any electrical product.
+  - **Facts read in code:** whether the product has a battery, touches food, is a textile, toy, cosmetic or electrical is read from the seller's own words (`landed/product_facts.py`, with negations such as "no battery" and the form's yes/no answers), and wins over what the model passed. Every price comes with the checklist: if the model prices without calling the compliance check, the code runs it.
 - **Guardrail (`landed/guardrail.py`):**
   - Checks generated listings and explanations in **9 EU listing languages** plus Chinese.
   - Flags money figures and percentages (symbol before or after, e.g. `€26.37` or `26,37 €`), product specs (W, mAh, ml) and certification or property claims (`CE`, `RoHS`, `BPA-free`, `TÜV`…) that appear in neither tool output nor the seller's messages.
@@ -240,7 +241,7 @@ Landed is built as an auditable pricing and compliance copilot: the model talks,
   - It is a pattern-based check, so it reduces invented claims but cannot catch every paraphrase.
 
 ### 2. Sourced FX & Empirical Volatility
-- **ECB reference rates (`scripts/refresh_fx.py`):** a script you run to pull the official EUR/CNY and USD/CNY (cross) rates from the European Central Bank. The repository ships a dated snapshot, and refreshing is a manual step.
+- **ECB reference rates (`landed/fx.py`):** the server pulls the official EUR/CNY and USD/CNY (cross) rates from the European Central Bank at startup and once a day, and prices with them. Each rate keeps its ECB date as its snapshot date, and the workspace header shows it. A fetch is used only if it is newer than the rate in use and within 15% of the shipped snapshot. If the ECB cannot be reached, the shipped snapshot in `data/rates.csv` stays in use. `LANDED_LIVE_FX=0` turns this off, and `scripts/refresh_fx.py` moves the shipped snapshot itself.
 - **Empirical volatility:** standard deviation of 42-trading-day (≈60 calendar days) log changes in EUR/CNY over two years of ECB history.
 - **Monte Carlo:** a seeded 5,000-path simulation (NumPy + SciPy) with Gaussian FX and Beta-distributed returns gives a **95% margin-at-risk floor price**. It is a simulated estimate under those assumptions, not a guarantee.
 
@@ -274,7 +275,9 @@ Landed is built as an auditable pricing and compliance copilot: the model talks,
 | `api/accounts.py` | Persistent session management, SQLite storage, scrypt password hashing, and user profile sync. |
 | `src/` | Interactive landing page, cost waterfall visualizer, and onboarding flow (Vite + GSAP). |
 | `src/lib/engine.js` | Zero-dependency JavaScript port of the engine's price, Monte Carlo and stress logic, with the same refusals (EUR 150 ceiling, unreachable margin). The landing page runs it on the Germany demo product. |
-| `scripts/refresh_fx.py` | Manual refresh of the ECB reference rates and historical volatility in `data/rates.csv` and the `src/` copies. |
+| `landed/fx.py` | Daily in-memory refresh of the ECB reference rates and volatility while the server runs, with sanity checks. |
+| `landed/product_facts.py` | Reads the facts the compliance check needs (battery, food contact, textile, toy, cosmetic, electrical) from the seller's own words, so the model cannot drop a blocker by leaving an attribute out. |
+| `scripts/refresh_fx.py` | Writes a new ECB snapshot into `data/rates.csv` and the `src/` copies (the snapshot the server starts from). |
 | `tests/` | Unit and integration tests covering the engine, agent loop, guardrails, accounts, and compliance logic. |
 | `eval/` | Eval harness comparing Landed with the same model without tools (36 headline cases, plus wider and realistic-seller suites). |
 

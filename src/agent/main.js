@@ -17,7 +17,7 @@ const $ = (id) => document.getElementById(id);
 // ------------------------------------------------------------------ copy
 const T = {
   zh: {
-    snapshot: '税率快照 2026-11-08 · 所有数字由规则引擎计算，并标注来源',
+    snapshot: (s) => `税率核对于 ${s.rates} · 汇率 ${s.fx}（欧洲央行${s.live ? '，每日更新' : ''}）· 所有数字由规则引擎计算，并标注来源`,
     example: '看示例',
     exampleLong: '看一个示例：便携榨汁杯 + 备用杯',
     exampleNiche: (n) => `看一个你的品类的示例：${n}`,
@@ -178,7 +178,7 @@ const T = {
     tl: { user: '你的消息', tool: '调用', answer: '回复', example: '载入示例', lab: '重新计算', hs: '你的回答' }
   },
   en: {
-    snapshot: 'Rates snapshot 2026-11-08 · every number comes from a rules engine, with its source',
+    snapshot: (s) => `Rates checked ${s.rates} · FX ${s.fx} (ECB${s.live ? ', updated daily' : ''}) · every number comes from a rules engine, with its source`,
     example: 'Example',
     exampleLong: 'See an example: portable blender + spare cup',
     exampleNiche: (n) => `See an example for your niche: ${n}`,
@@ -382,6 +382,8 @@ const state = {
   check: null,
   eu: null,
   euAll: false,
+  focus: null, // the pricing tool that answered the seller's last question: its panel goes first
+  snap: { rates: '2026-11-09', fx: '2026-11-06', live: false }, // replaced by the dates from /api/sources
   hs: null,
   flags: null,
   flagAttrs: null,
@@ -510,6 +512,7 @@ function openProduct(data) {
   state.checkPrice = data.check?.price || null;
   state.checkCur = state.checkPrice ? (data.inputs?.market === 'US' ? 'USD' : 'EUR') : null;
   state.check = null;
+  state.focus = null;
   state.inputs = { ...data.inputs };
   state.overrides = { ...(data.overrides || {}) };
   state.flagAttrs = data.flagAttrs || null;
@@ -544,6 +547,7 @@ function applyCopy() {
     const v = t(el.dataset.i18n);
     if (typeof v === 'string') el.textContent = v;
   });
+  document.querySelector('[data-i18n="snapshot"]').textContent = t('snapshot')(state.snap);
   $('lw-lang').textContent = t('langBtn');
   $('chat-input').placeholder = t('placeholder');
   $('chat-send').setAttribute('aria-label', t('send'));
@@ -634,6 +638,16 @@ async function loadDefaults() {
       return_rate: a && b ? a / (a + b) : 0.08,
       fx: { DE: get('fx_cny_per_eur', 'EU'), US: get('fx_cny_per_usd', 'US') }
     };
+    // the header shows the dates of the rates actually in use: the server refreshes FX from the ECB every day
+    const FX = ['fx_cny_per_eur', 'fx_cny_per_usd', 'fx_horizon_sd'];
+    const fxRow = rows.find((r) => r.key === 'fx_cny_per_eur');
+    const checked = rows.filter((r) => !FX.includes(r.key) && r.snapshot_date).map((r) => r.snapshot_date).sort().pop();
+    state.snap = {
+      rates: checked || state.snap.rates,
+      fx: fxRow?.snapshot_date || state.snap.fx,
+      live: /Fetched live/.test(fxRow?.note || '')
+    };
+    document.querySelector('[data-i18n="snapshot"]').textContent = t('snapshot')(state.snap);
   } catch {
     state.defaults = { fee_rate: 0.15, freight_cny_per_kg: 45, return_rate: 0.08, fx: { DE: 7.4485, US: 6.6713 } };
   }
@@ -790,10 +804,13 @@ function renderPrice(res) {
   applyWorries();
 }
 
-// A seller worried about compliance sees the checklist right under the price.
+// A seller worried about compliance sees the checklist right under the price. The panel that answers the
+// seller's own question ("it sells for €X, do I make money?", "which country?") goes above the price.
 function applyWorries() {
   const w = personal.profile().worries || [];
   $('sec-flags').style.order = w.includes('compliance') ? '25' : '';
+  $('sec-check').style.order = state.focus === 'price_check' ? '15' : '';
+  $('sec-eu').style.order = state.focus === 'compare_eu' ? '15' : '';
 }
 
 // ------------------------------------------------------------------ compliance
@@ -1211,6 +1228,7 @@ function readLast() {
 }
 
 async function restoreLast(last) {
+  state.focus = null;
   state.inputs = last.inputs;
   state.overrides = last.overrides || {};
   if (last.platform !== undefined) state.platform = last.platform;
@@ -1229,7 +1247,8 @@ async function loadExample() {
   const last = readLast();
   if (last) return restoreLast(last);
   const mine = exampleConfig();
-  state.inputs = { ...(mine ? mine.inputs : EXAMPLE.inputs), market: exampleMarket() };
+  state.focus = null;
+  state.inputs ={ ...(mine ? mine.inputs : EXAMPLE.inputs), market: exampleMarket() };
   state.overrides = ownOverrides(state.inputs.market);
   state.flagAttrs = mine ? null : { ...EXAMPLE.flagAttrs }; // null: the seller's niche decides the checks
   logTimeline('example', mine ? mine.description : EXAMPLE.description);
@@ -1336,7 +1355,9 @@ async function send(text) {
           renderNotice(r.error);
         }
         if (pricing && (r.waterfall || r.monte_carlo || r.rows)) {
+          if (!turn.priced) $('pane-result').scrollTop = 0; // a new answer starts at the top of the workspace
           turn.priced = true;
+          state.focus = ev.name;
           const a = pending[ev.name] || {};
           // "it sells for X" from the chat fills the price-check panel; a compare at the seller's price too
           if (a.list_price != null && (ev.name === 'price_check' || ev.name === 'compare_eu')) {

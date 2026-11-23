@@ -40,6 +40,17 @@ class MissingRate(LookupError):
 
 @lru_cache
 def rates() -> dict[tuple[str, str], Rate]:
+    """The rates in use. landed.fx replaces the FX rows in this table with live ECB rates while the server runs."""
+    return _load()
+
+
+@lru_cache
+def shipped_rates() -> dict[tuple[str, str], Rate]:
+    """The snapshot in data/rates.csv as shipped, never changed at runtime (the reference for live updates)."""
+    return _load()
+
+
+def _load() -> dict[tuple[str, str], Rate]:
     out: dict[tuple[str, str], Rate] = {}
     with open(DATA_DIR / "rates.csv", encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):

@@ -154,6 +154,8 @@ body.is-onboarding { overflow: hidden; }
 #sec-price { order: 20; }
 #sec-breakdown { order: 30; }
 #sec-risk { order: 40; }
+#sec-check { order: 44; }
+#sec-eu { order: 46; }
 #sec-flags { order: 50; }
 #sec-adjust { order: 60; }
 #sec-sources { order: 70; }

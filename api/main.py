@@ -17,10 +17,22 @@ from pydantic import BaseModel, Field
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
-from landed import agent, data, engine, hs, platforms  # noqa: E402
+from contextlib import asynccontextmanager  # noqa: E402
+
+from landed import agent, data, engine, fx, hs, platforms  # noqa: E402
 from api import accounts  # noqa: E402
 
-app = FastAPI(title="Landed 到岸", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    import asyncio
+
+    # live ECB rates, daily; LANDED_LIVE_FX=0 keeps the shipped snapshot. Waits at most 5 s for the first fetch.
+    await asyncio.to_thread(fx.start_refresher)
+    yield
+
+
+app = FastAPI(title="Landed 到岸", version="0.1.0", lifespan=lifespan)
 
 
 @app.exception_handler(RequestValidationError)
@@ -84,9 +96,21 @@ class ClassifyIn(BaseModel):
     attributes: dict = {}
 
 
+FX_KEYS = {"fx_cny_per_eur", "fx_cny_per_usd", "fx_horizon_sd"}
+
+
+def snapshot_info() -> dict:
+    """When the tables were last checked (every row except FX), and the date and origin of the FX rates in use."""
+    rows = data.rates().values()
+    return {
+        "snapshot": max(r.snapshot_date for r in rows if r.key not in FX_KEYS and r.snapshot_date),
+        "fx": fx.status(),
+    }
+
+
 @app.get("/api/health")
 def health():
-    return {"ok": True, "rates": len(data.rates()), "snapshot": "2026-11-08"}
+    return {"ok": True, "rates": len(data.rates()), **snapshot_info()}
 
 
 @app.post("/api/calc")

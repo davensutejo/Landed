@@ -8,7 +8,9 @@
        LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
        LLM_MODEL=glm-4.5-air
 5. `docker compose up -d --build`
-6. Open `http://<server-ip>/` and check `/api/platforms?market=DE`.
+6. Open `http://<server-ip>/` and check `/api/platforms?market=DE`. `/api/health` should show `"fx": {"live": true, ...}`
+   with a recent ECB date; if `error` is set, the server cannot reach data-api.ecb.europa.eu and prices use the
+   FX snapshot shipped in `data/rates.csv`.
 7. From a **mainland network** (phone on mobile data, no VPN) open the page and send a chat message.
 
 HTTPS (optional, needs a domain pointing at the server): run Caddy in front:
