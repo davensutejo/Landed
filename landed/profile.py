@@ -55,9 +55,16 @@ PLATFORMS = _platforms.ids()
 from .markets import EU_COUNTRIES
 
 MARKET_NAME = {**{c: v[0] for c, v in EU_COUNTRIES.items()}, "US": "United States"}
-OWN_NUMBERS = ("fee_rate", "freight_cny_per_kg", "return_rate", "fx")
+OWN_NUMBERS = ("fee_rate", "freight_cny_per_kg", "return_rate", "fx", "ad_rate", "payout_rate", "fulfilment_fee")
+# Saved figures in a currency: they apply only to markets in the currency of the seller's saved market.
+IN_CURRENCY = ("fx", "fulfilment_fee")
 _BOUNDS = {"target_margin": (0.01, 0.7), "fee_rate": (0, 0.5), "return_rate": (0, 0.5),
-           "freight_cny_per_kg": (0.01, 500), "fx": (0.01, 100)}
+           "freight_cny_per_kg": (0.01, 500), "fx": (0.01, 100), "ad_rate": (0, 0.5), "payout_rate": (0, 0.09),
+           "fulfilment_fee": (0, 100)}
+
+
+def currency(market: str | None) -> str | None:
+    return None if not market else ("USD" if market == "US" else "EUR")
 
 
 def clean(profile: dict | None) -> dict:

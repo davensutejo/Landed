@@ -75,7 +75,14 @@ const T = {
     hsNoneUS: '未填 HS 编码 · 美国基础关税未载入',
     kinds: (n) => `${n} 种商品 / 包裹`,
     demoChip: '仍用占位值',
+    notInclChip: '未计入',
     yourChip: '已使用你的设置',
+    extraT: '其他成本（默认未计入）',
+    extraTag: '填上你的，利润才准',
+    notIncl: '未计入',
+    boxT: '包装箱尺寸（选填）',
+    boxHint: '运费按实重和体积重中较大的计算',
+    boxTip: (kg, actual) => `运费按箱子体积计：体积重 ${kg} kg（实重 ${actual} kg）。换小一点的箱子能省运费。`,
     emptyYou: '按你的设置报价：',
     emptyYouTail: '只需告诉我成本和重量。',
     vatChip: (v) => `增值税按 ${v} 标准税率（部分商品如食品、图书适用低税率）`,
@@ -93,7 +100,7 @@ const T = {
     warnAbove: '售价超过 €150，€3 统一关税不适用，已改按该编码的常规关税计算。',
     breakdownTitle: '售价构成',
     breakdownHint: (p) => `售价 ${p} 都去了哪里（百分比为占售价比例）`,
-    wf: { cogs: '货值', freight: '头程运费', duty: '关税', returns: '退货损耗', fee: '平台佣金', vat: '增值税', margin: '利润' },
+    wf: { cogs: '货值', freight: '头程运费', duty: '关税', returns: '退货损耗', fee: '平台佣金', ads: '广告费', fulfilment: '配送/履约费', payout: '收款手续费', vat: '增值税', margin: '利润' },
     riskTitle: '什么会吃掉你的利润',
     riskHint: (p) => `按 ${p} 售价计算`,
     stress: {
@@ -102,7 +109,8 @@ const T = {
       'Freight +30%': '旺季运费上涨 30%',
       'Add a different kind': '包裹里多放一种不同商品（如赠品）：多交 €3 关税',
       'Duty +10': '关税提高 10 个百分点',
-      'Platform fee at the high end': '平台佣金升到区间高位'
+      'Platform fee at the high end': '平台佣金升到区间高位',
+      'Advertising +5': '广告费多花 5 个百分点（同行抬价）'
     },
     riskMore: '查看利润分布和不同售价的达标概率',
     histCaption: '目标售价下的利润率分布（5,000 次模拟）',
@@ -143,7 +151,7 @@ const T = {
     yours: '你的数据',
     demo: '默认假设（可改）',
     demoTag: '换成你的真实报价',
-    f: { cogs_cny: '单件成本', weight_kg: '重量', target_margin: '目标毛利', item_categories: '商品种类 / 包裹', fee_rate: '平台佣金', freight_cny_per_kg: '头程运费', return_rate: '退货率', fx: '汇率' },
+    f: { cogs_cny: '单件成本', weight_kg: '重量', target_margin: '目标毛利', item_categories: '商品种类 / 包裹', fee_rate: '平台佣金', freight_cny_per_kg: '头程运费', return_rate: '退货率', fx: '汇率', ad_rate: '广告费（占销售额）', payout_rate: '收款/结汇手续费', fulfilment_fee: '每单配送/履约费', dims_cm: '长 × 宽 × 高', volumetric_divisor: '体积重系数' },
     fxUnit: (c) => `元 / ${c}`,
     market: '市场',
     eu: '欧盟',
@@ -159,7 +167,7 @@ const T = {
     sourcesHint: '每个数字的出处、状态和本次的计算过程',
     th: ['项目', '数值', '状态', '来源'],
     status: { verified: '已核实', secondary: '待核实', assumption: '占位值', seller_input: '你的数据', unknown: '未加载' },
-    prov: { 'FX CNY per EUR': '汇率（元/欧元）', 'FX CNY per USD': '汇率（元/美元）', 'FX volatility': '汇率波动', 'Platform fee': '平台佣金', 'Platform fixed fee': '平台每单固定费', 'Freight CNY/kg': '头程运费（元/kg）', 'Return-rate prior': '退货率', VAT: '增值税', 'EU flat duty per tariff category': '欧盟统一关税（每类商品）', 'EU conventional duty': '欧盟常规关税（€150 以上）', 'US HTSUS duty': '美国关税', 'US de minimis': '美国小额免税' },
+    prov: { 'FX CNY per EUR': '汇率（元/欧元）', 'FX CNY per USD': '汇率（元/美元）', 'FX volatility': '汇率波动', 'Platform fee': '平台佣金', 'Platform fixed fee': '平台每单固定费', 'Freight CNY/kg': '头程运费（元/kg）', 'Return-rate prior': '退货率', VAT: '增值税', 'EU flat duty per tariff category': '欧盟统一关税（每类商品）', 'EU conventional duty': '欧盟常规关税（€150 以上）', 'US HTSUS duty': '美国关税', 'US de minimis': '美国小额免税', 'Advertising (share of sales)': '广告费（占销售额）', 'Payout and currency conversion fee': '收款/结汇手续费', 'Fulfilment fee per order': '每单配送/履约费', 'Volumetric divisor': '体积重系数（cm³/kg）' },
     timelineTitle: '本次计算过程',
     export: '导出记录 (JSON)',
     print: '打印报告',
@@ -236,7 +244,14 @@ const T = {
     hsNoneUS: 'No HS code · US base duty not loaded',
     kinds: (n) => `${n} kind${n > 1 ? 's' : ''} of item per parcel`,
     demoChip: 'Still placeholders',
+    notInclChip: 'Not included',
     yourChip: 'Using your settings',
+    extraT: 'Other costs (not included by default)',
+    extraTag: 'enter yours for a true margin',
+    notIncl: 'not included',
+    boxT: 'Box size (optional)',
+    boxHint: 'freight is charged on the larger of actual and volumetric weight',
+    boxTip: (kg, actual) => `Freight is charged on the box size: ${kg} kg volumetric (actual ${actual} kg). A smaller box cuts freight.`,
     emptyYou: 'Pricing with your settings: ',
     emptyYouTail: 'just give me the cost and weight.',
     vatChip: (v) => `VAT at the standard ${v} (some goods, e.g. food and books, use a reduced rate)`,
@@ -254,7 +269,7 @@ const T = {
     warnAbove: 'The price is above €150, so the €3 flat duty does not apply; the conventional duty for this code is used instead.',
     breakdownTitle: 'Where the price goes',
     breakdownHint: (p) => `Breakdown of ${p} (percent of the price)`,
-    wf: { cogs: 'Product cost', freight: 'Freight', duty: 'Duty', returns: 'Returns', fee: 'Platform fee', vat: 'VAT', margin: 'Profit' },
+    wf: { cogs: 'Product cost', freight: 'Freight', duty: 'Duty', returns: 'Returns', fee: 'Platform fee', ads: 'Advertising', fulfilment: 'Fulfilment', payout: 'Payout fee', vat: 'VAT', margin: 'Profit' },
     riskTitle: 'What could eat your margin',
     riskHint: (p) => `at ${p}`,
     stress: {
@@ -263,7 +278,8 @@ const T = {
       'Freight +30%': 'Peak-season freight +30%',
       'Add a different kind': 'Adding a different item (e.g. a free gift): +€3 duty',
       'Duty +10': 'Duty +10 percentage points',
-      'Platform fee at the high end': 'Platform fee at the high end of its range'
+      'Platform fee at the high end': 'Platform fee at the high end of its range',
+      'Advertising +5': 'Ad costs +5 points (a competitor bids up your keywords)'
     },
     riskMore: 'Show the margin distribution and the odds at other prices',
     histCaption: 'Margin at the recommended price, 5,000 simulated scenarios',
@@ -304,7 +320,7 @@ const T = {
     yours: 'Your numbers',
     demo: 'Default assumptions (editable)',
     demoTag: 'replace with your real quotes',
-    f: { cogs_cny: 'Unit cost', weight_kg: 'Weight', target_margin: 'Target margin', item_categories: 'Kinds of item / parcel', fee_rate: 'Platform fee', freight_cny_per_kg: 'Freight', return_rate: 'Return rate', fx: 'FX' },
+    f: { cogs_cny: 'Unit cost', weight_kg: 'Weight', target_margin: 'Target margin', item_categories: 'Kinds of item / parcel', fee_rate: 'Platform fee', freight_cny_per_kg: 'Freight', return_rate: 'Return rate', fx: 'FX', ad_rate: 'Ad spend (share of sales)', payout_rate: 'Payout / conversion fee', fulfilment_fee: 'Fulfilment fee per order', dims_cm: 'Length × width × height', volumetric_divisor: 'Volumetric divisor' },
     fxUnit: (c) => `CNY / ${c}`,
     market: 'Market',
     eu: 'EU',
@@ -383,7 +399,7 @@ const state = {
   eu: null,
   euAll: false,
   focus: null, // the pricing tool that answered the seller's last question: its panel goes first
-  snap: { rates: '2026-11-09', fx: '2026-11-06', live: false }, // replaced by the dates from /api/sources
+  snap: { rates: '2026-11-08', fx: '2026-11-06', live: false }, // replaced by the dates from /api/sources
   hs: null,
   flags: null,
   flagAttrs: null,
@@ -407,7 +423,10 @@ const personal = createPersonal({
 
 function ownOverrides(market) {
   const o = personal.overrides();
-  if (isEU(personal.profile().market) !== isEU(market)) delete o.fx; // CNY per EUR is not CNY per USD
+  if (isEU(personal.profile().market) !== isEU(market)) {
+    delete o.fx; // CNY per EUR is not CNY per USD
+    delete o.fulfilment_fee; // a € fee is not a $ fee
+  }
   return o;
 }
 
@@ -636,12 +655,14 @@ async function loadDefaults() {
       fee_rate: get('platform_fee'),
       freight_cny_per_kg: get('freight_cny_per_kg'),
       return_rate: a && b ? a / (a + b) : 0.08,
-      fx: { DE: get('fx_cny_per_eur', 'EU'), US: get('fx_cny_per_usd', 'US') }
+      fx: { DE: get('fx_cny_per_eur', 'EU'), US: get('fx_cny_per_usd', 'US') },
+      volumetric_divisor: get('volumetric_divisor')
     };
     // the header shows the dates of the rates actually in use: the server refreshes FX from the ECB every day
     const FX = ['fx_cny_per_eur', 'fx_cny_per_usd', 'fx_horizon_sd'];
     const fxRow = rows.find((r) => r.key === 'fx_cny_per_eur');
-    const checked = rows.filter((r) => !FX.includes(r.key) && r.snapshot_date).map((r) => r.snapshot_date).sort().pop();
+    // the oldest check date: every other row was checked on or after it
+    const checked = rows.filter((r) => !FX.includes(r.key) && r.snapshot_date).map((r) => r.snapshot_date).sort()[0];
     state.snap = {
       rates: checked || state.snap.rates,
       fx: fxRow?.snapshot_date || state.snap.fx,
@@ -729,7 +750,11 @@ function renderPrice(res) {
     .map(([c, l, v, s]) => `<div class="stat ${c}"><dt>${esc(l)}</dt><dd>${esc(v)}<small>${esc(s)}</small></dd></div>`)
     .join('');
 
-  const demoLabels = [...new Set((res.provenance || []).filter((p) => p.status === 'assumption' && !/volatility/i.test(p.label)).map((p) => provLabel(p.label)))];
+  const colon = state.lang === 'zh' ? '：' : ': ';
+  const isExtra = (p) => EXTRA_KEYS.includes(p.key);
+  const demoLabels = [...new Set((res.provenance || []).filter((p) => p.status === 'assumption' && !/volatility/i.test(p.label) && !isExtra(p)).map((p) => provLabel(p.label)))];
+  // costs left at 0 because the seller has not entered them: named as not included, never as "0%"
+  const notIncl = (res.provenance || []).filter((p) => isExtra(p) && p.status === 'assumption' && !p.value).map((p) => t('wf')[EXTRA_STEP[p.key]]);
   const usesMine = (res.provenance || []).some((p) => p.status === 'seller_input');
   const chips = [
     `<span class="chip">${esc(us ? t('marketUS') : `${marketName(inp.market, state.lang)} · IOSS`)}</span>`,
@@ -737,7 +762,8 @@ function renderPrice(res) {
     !us ? `<span class="chip">${esc(t('kinds')(inp.item_categories || 1))}</span>` : '',
     !us && !inp.hs_code ? `<span class="chip">${esc(t('vatChip')(vatRow ? `${+(vatRow.value * 100).toFixed(1)}%` : ''))}</span>` : '',
     usesMine ? `<span class="chip chip--good">${esc(t('yourChip'))}</span>` : '',
-    demoLabels.length ? `<span class="chip chip--warn">${esc(t('demoChip'))}：${esc(demoLabels.join(state.lang === 'zh' ? '、' : ', '))}</span>` : ''
+    demoLabels.length ? `<span class="chip chip--warn">${esc(t('demoChip'))}${colon}${esc(demoLabels.join(state.lang === 'zh' ? '、' : ', '))}</span>` : '',
+    notIncl.length ? `<span class="chip chip--warn">${esc(t('notInclChip'))}${colon}${esc(notIncl.join(state.lang === 'zh' ? '、' : ', '))}</span>` : ''
   ];
   $('price-chips').innerHTML = chips.join('');
 
@@ -753,6 +779,9 @@ function renderPrice(res) {
   if (res.bundle_tip) {
     const b = res.bundle_tip;
     tips.push(`<div class="tip"><b>${esc(t('bundleT')(money(b.price_reduction, cur)))}</b><small>${esc(t('bundleNote'))}</small></div>`);
+  }
+  if (inp.dims_cm && inp.chargeable_weight_kg > inp.weight_kg) {
+    tips.push(`<div class="tip tip--warn">${esc(t('boxTip')(+inp.chargeable_weight_kg.toFixed(2), inp.weight_kg))}</div>`);
   }
   (res.warnings || []).forEach((w) => {
     if (/^US figure is a LOWER BOUND/i.test(w)) {
@@ -855,9 +884,19 @@ const FIELDS = [
   { k: 'fee_rate', unit: '%', pct: true, step: 0.5, min: 0, max: 40, demo: true },
   { k: 'freight_cny_per_kg', unit: '¥/kg', step: 1, min: 1, demo: true },
   { k: 'return_rate', unit: '%', pct: true, step: 0.5, min: 0, max: 40, demo: true },
-  { k: 'fx', unit: 'fx', step: 0.01, min: 0.1, demo: true }
+  { k: 'fx', unit: 'fx', step: 0.01, min: 0.1, demo: true },
+  // costs not included until the seller enters them (blank = not included)
+  { k: 'ad_rate', unit: '%', pct: true, step: 0.5, min: 0, max: 59, extra: true },
+  { k: 'payout_rate', unit: '%', pct: true, step: 0.1, min: 0, max: 9.9, extra: true },
+  { k: 'fulfilment_fee', unit: 'cur', step: 0.1, min: 0, max: 100, extra: true },
+  { k: 'volumetric_divisor', unit: 'cm³/kg', step: 500, min: 1000, max: 10000, box: true }
 ];
+// rates.csv keys of the costs that are 0 until entered, and their breakdown step
+const EXTRA_KEYS = ['ad_rate', 'payout_rate', 'fulfilment_fee'];
+const EXTRA_STEP = { ad_rate: 'ads', payout_rate: 'payout', fulfilment_fee: 'fulfilment' };
 function fieldValue(f) {
+  if (f.extra) return state.overrides[f.k]; // undefined: not included, the box stays blank
+  if (f.box) return state.overrides[f.k] ?? state.defaults.volumetric_divisor ?? 6000;
   if (f.demo) {
     if (state.overrides[f.k] != null) return state.overrides[f.k];
     if (f.k === 'fee_rate') {
@@ -870,18 +909,30 @@ function fieldValue(f) {
 }
 function fieldHTML(f) {
   const raw = fieldValue(f);
-  const v = f.pct ? +(raw * 100).toFixed(2) : raw;
-  const unit = f.unit === 'fx' ? t('fxUnit')(state.inputs.market === 'US' ? 'USD' : 'EUR') : f.unit;
-  const isDemo = f.demo && state.overrides[f.k] == null;
+  const v = f.pct && raw != null ? +(raw * 100).toFixed(2) : raw;
+  const us = state.inputs.market === 'US';
+  const unit = f.unit === 'fx' ? t('fxUnit')(us ? 'USD' : 'EUR') : f.unit === 'cur' ? (us ? '$' : '€') : f.unit;
+  const isDemo = (f.demo || f.box) && state.overrides[f.k] == null;
+  const ph = f.extra ? ` placeholder="${esc(t('notIncl'))}"` : '';
   return `<label class="field ${isDemo ? 'is-demo' : ''}"><span>${esc(t('f')[f.k])}</span><span class="field__box">
-    <input type="number" inputmode="decimal" data-k="${f.k}" value="${v ?? ''}" step="${f.step}" min="${f.min}" ${f.max ? `max="${f.max}"` : ''} />
+    <input type="number" inputmode="decimal" data-k="${f.k}" value="${v ?? ''}" step="${f.step}" min="${f.min}" ${f.max ? `max="${f.max}"` : ''}${ph} />
     ${unit ? `<span class="field__u">${esc(unit)}</span>` : ''}</span></label>`;
+}
+// Box size: three sides in cm. All three, or none (no box: freight on the actual weight).
+function boxHTML() {
+  const d = state.inputs.dims_cm || [];
+  const box = [0, 1, 2]
+    .map((i) => `<input type="number" inputmode="decimal" data-dim="${i}" value="${d[i] ?? ''}" step="1" min="1" max="300" aria-label="${esc(t('f').dims_cm)} ${i + 1}" />`)
+    .join('<span class="field__x">×</span>');
+  return `<label class="field field--box"><span>${esc(t('f').dims_cm)}</span><span class="field__box">${box}<span class="field__u">cm</span></span></label>`;
 }
 function buildAdjust() {
   const m = state.inputs.market;
   const usOK = true;
-  const mine = FIELDS.filter((f) => !f.demo && (!f.de || isEU(m)));
+  const mine = FIELDS.filter((f) => !f.demo && !f.extra && !f.box && (!f.de || isEU(m)));
   const demo = FIELDS.filter((f) => f.demo);
+  const extra = FIELDS.filter((f) => f.extra);
+  const boxF = FIELDS.filter((f) => f.box);
   $('adjust').innerHTML = `
     <fieldset><legend>${esc(t('market'))}</legend><div class="seg">
       <button type="button" data-market="${isEU(m) ? m : state.euPick || 'DE'}" class="${isEU(m) ? 'is-on' : ''}">${esc(t('eu'))}</button>
@@ -889,11 +940,34 @@ function buildAdjust() {
     </div>${isEU(m) ? `<label class="eu-pick"><span>${esc(t('euCountry'))}</span><select data-eu>${EU.map((c) => `<option value="${c[0]}" ${c[0] === m ? 'selected' : ''}>${esc(state.lang === 'zh' ? c[2] : c[1])}</option>`).join('')}</select></label>` : ''}</fieldset>
     <fieldset><legend>${esc(t('soldOn'))}</legend><select data-platform aria-label="${esc(t('soldOn'))}"><option value="">${esc(t('platformNone'))}</option></select></fieldset>
     <fieldset><legend>${esc(t('yours'))}</legend><div class="fields">${mine.map(fieldHTML).join('')}</div></fieldset>
-    <fieldset><legend>${esc(t('demo'))}<span class="tag tag--warn">${esc(t('demoTag'))}</span></legend><div class="fields">${demo.map(fieldHTML).join('')}</div></fieldset>`;
+    <fieldset><legend>${esc(t('demo'))}<span class="tag tag--warn">${esc(t('demoTag'))}</span></legend><div class="fields">${demo.map(fieldHTML).join('')}</div></fieldset>
+    <fieldset><legend>${esc(t('extraT'))}<span class="tag tag--warn">${esc(t('extraTag'))}</span></legend><div class="fields">${extra.map(fieldHTML).join('')}</div></fieldset>
+    <fieldset><legend>${esc(t('boxT'))}<span class="panel__hint">${esc(t('boxHint'))}</span></legend><div class="fields">${boxHTML()}${boxF.map(fieldHTML).join('')}</div></fieldset>`;
 
+  $('adjust').querySelectorAll('input[data-dim]').forEach((inp) =>
+    inp.addEventListener('input', () => {
+      const vals = [...$('adjust').querySelectorAll('input[data-dim]')].map((x) => x.value.trim());
+      if (vals.every((v) => v === '')) {
+        delete state.inputs.dims_cm; // no box: freight on the actual weight
+        return recalcSoon();
+      }
+      const n = vals.map(parseFloat);
+      if (n.every((v) => v > 0 && v <= 300)) {
+        state.inputs.dims_cm = n;
+        recalcSoon();
+      } // a half-typed box changes nothing until all three sides are in
+    })
+  );
   $('adjust').querySelectorAll('input[data-k]').forEach((inp) =>
     inp.addEventListener('input', () => {
       const f = FIELDS.find((x) => x.k === inp.dataset.k);
+      if ((f.extra || f.box) && inp.value.trim() === '') {
+        delete state.overrides[f.k]; // cleared: not included again (or back to the default divisor)
+        inp.setAttribute('aria-invalid', 'false');
+        inp.closest('.field').querySelector('.field__err')?.remove();
+        if (f.box) inp.closest('.field').classList.add('is-demo');
+        return recalcSoon();
+      }
       const n = parseFloat(inp.value);
       const bad = !(n >= (f.min ?? 0)) || (f.max && n > f.max);
       inp.setAttribute('aria-invalid', String(!!bad));
@@ -910,7 +984,7 @@ function buildAdjust() {
       }
       err?.remove();
       const v = f.pct ? n / 100 : f.k === 'item_categories' ? Math.round(n) : n;
-      if (f.demo) {
+      if (f.demo || f.extra || f.box) {
         state.overrides[f.k] = v;
         inp.closest('.field').classList.remove('is-demo');
       } else state.inputs[f.k] = v;
@@ -923,7 +997,10 @@ function buildAdjust() {
       const prev = state.inputs.market;
       state.inputs.market = b.dataset.market;
       if (isEU(b.dataset.market)) state.euPick = b.dataset.market;
-      if (isEU(prev) !== isEU(b.dataset.market)) delete state.overrides.fx; // CNY per EUR is not CNY per USD
+      if (isEU(prev) !== isEU(b.dataset.market)) {
+        delete state.overrides.fx; // CNY per EUR is not CNY per USD
+        delete state.overrides.fulfilment_fee; // a € fee is not a $ fee
+      }
       buildAdjust();
       recalc();
     })
@@ -965,6 +1042,8 @@ function effectivePlatform(market = state.inputs.market) {
 function payload(market = state.inputs.market) {
   const p = { ...state.inputs, market, ...state.overrides };
   if (market !== state.inputs.market) delete p.fx;
+  if (isEU(market) !== isEU(state.inputs.market)) delete p.fulfilment_fee; // € is not $
+  if (!p.dims_cm) delete p.dims_cm;
   if (market === 'US') {
     p.item_categories = 1;
     if (!p.hs_code) p.indicative = true; // no code: a labelled lower bound, as in the chat
@@ -1372,12 +1451,13 @@ async function send(text) {
             target_margin: a.target_margin ?? 0.25,
             item_categories: a.item_categories ?? 1,
             ...(a.indicative ? { indicative: true } : {}),
-            ...(a.hs_assumed ? { hs_assumed: true } : {})
+            ...(a.hs_assumed ? { hs_assumed: true } : {}),
+            ...(Array.isArray(a.dims_cm) && a.dims_cm.length === 3 ? { dims_cm: a.dims_cm } : {})
           };
           // the panel prices with what the chat used, so the two numbers always agree
           if (a.platform) state.platform = a.platform;
           state.overrides = ownOverrides(a.market);
-          ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx'].forEach((k) => {
+          ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx', 'ad_rate', 'payout_rate', 'fulfilment_fee', 'volumetric_divisor'].forEach((k) => {
             if (a[k] != null) state.overrides[k] = a[k];
           });
           buildAdjust();

@@ -51,6 +51,14 @@ class Inputs:
     freight_cny_per_kg: float | None = None
     return_rate: float | None = None
     fx: float | None = None
+    # Costs most sellers carry that the default leaves at 0 (shown as "not included" until the seller enters them):
+    ad_rate: float | None = None         # advertising as a share of sales (TACoS: ad spend / total sales incl. VAT)
+    payout_rate: float | None = None     # payment provider's payout and currency conversion fee, share of the payout
+    fulfilment_fee: float | None = None  # per-order fulfilment / pick-and-pack / last-mile fee, destination currency
+    # Box size in cm (length, width, height). Freight is charged on the larger of the actual and the volumetric
+    # weight (L x W x H / divisor), as couriers and e-commerce lines do.
+    dims_cm: tuple[float, float, float] | list[float] | None = None
+    volumetric_divisor: float | None = None
     paths: int = 5000
     seed: int = 20261108
     # US only. With no usable HS code, price anyway: the 12.5% China Section 301 duty is included, the base
@@ -78,8 +86,23 @@ class Params:
     fee_high: float | None = None
     target: float = 0.25
     flat_threshold: float = 150.0
+    ad_rate: float = 0.0
+    payout_rate: float = 0.0
+    fulfil: float = 0.0  # per-order fulfilment fee in the destination currency
+    chargeable_kg: float = 0.0
     provenance: list[dict] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+
+    @property
+    def pct(self) -> float:
+        """Costs that scale with the list price P, as a share of P: the platform fee and advertising on the gross
+        price, and the payout fee on the payout (approximated by revenue excl. VAT, a slight overstatement)."""
+        return self.fee + self.ad_rate + self.payout_rate / (1 + self.vat)
+
+    @property
+    def per_order(self) -> float:
+        """Costs per order in the destination currency: the platform's fixed fee and the fulfilment fee."""
+        return self.fee_fixed + self.fulfil
 
 
 def _prov(rows: list[dict], r: data.Rate, label: str, override: bool = False) -> None:
@@ -96,7 +119,13 @@ def build_params(x: Inputs) -> Params:
         raise EngineError(f"Market {x.market!r} not supported. Supported: {sorted(MARKETS)}")
     nums = {"target_margin": x.target_margin, "cogs_cny": x.cogs_cny, "weight_kg": x.weight_kg}
     nums.update({k: v for k, v in (("fee_rate", x.fee_rate), ("return_rate", x.return_rate), ("fx", x.fx),
-                                   ("freight_cny_per_kg", x.freight_cny_per_kg)) if v is not None})
+                                   ("freight_cny_per_kg", x.freight_cny_per_kg), ("ad_rate", x.ad_rate),
+                                   ("payout_rate", x.payout_rate), ("fulfilment_fee", x.fulfilment_fee),
+                                   ("volumetric_divisor", x.volumetric_divisor)) if v is not None})
+    if x.dims_cm is not None:
+        if not isinstance(x.dims_cm, (list, tuple)) or len(x.dims_cm) != 3:
+            raise EngineError("dims_cm must be three numbers: length, width and height in cm")
+        nums.update({f"dims_cm[{i}]": v for i, v in enumerate(x.dims_cm)})
     for name, v in nums.items():
         if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
             raise EngineError(f"{name} must be a finite number")
@@ -112,6 +141,16 @@ def build_params(x: Inputs) -> Params:
         raise EngineError("fx must be positive (CNY per unit of the destination currency)")
     if x.freight_cny_per_kg is not None and x.freight_cny_per_kg < 0:
         raise EngineError("freight_cny_per_kg cannot be negative")
+    if x.ad_rate is not None and not 0 <= x.ad_rate < 0.6:
+        raise EngineError("ad_rate must be between 0 and 0.6 (e.g. 0.10 for ads costing 10% of sales)")
+    if x.payout_rate is not None and not 0 <= x.payout_rate < 0.1:
+        raise EngineError("payout_rate must be between 0 and 0.1 (e.g. 0.01 for a 1% payout and conversion fee)")
+    if x.fulfilment_fee is not None and not 0 <= x.fulfilment_fee <= 100:
+        raise EngineError("fulfilment_fee must be between 0 and 100 per order, in the destination currency")
+    if x.dims_cm is not None and not all(0 < d <= 300 for d in x.dims_cm):
+        raise EngineError("each box side (dims_cm) must be above 0 and at most 300 cm")
+    if x.volumetric_divisor is not None and not 1000 <= x.volumetric_divisor <= 10000:
+        raise EngineError("volumetric_divisor must be between 1000 and 10000 (cm3 per kg; couriers use 5000 or 6000)")
     # Sanity ceilings far beyond any real parcel, so overflow (1e308) can never reach the maths as inf/NaN.
     for name, v, hi in (("cogs_cny", x.cogs_cny, 1e7), ("weight_kg", x.weight_kg, 1000), ("fx", x.fx, 1000),
                         ("freight_cny_per_kg", x.freight_cny_per_kg, 1e5)):
@@ -159,6 +198,30 @@ def build_params(x: Inputs) -> Params:
             )
     fr_r = data.rate("freight_cny_per_kg", "ALL")
     _prov(prov, fr_r, "Freight CNY/kg", override=x.freight_cny_per_kg is not None)
+    # Freight is charged on the larger of the actual and the volumetric weight of the box.
+    chargeable = x.weight_kg
+    if x.dims_cm is not None:
+        dv = data.rate("volumetric_divisor", "ALL")
+        _prov(prov, dv, "Volumetric divisor (cm3 per kg)", override=x.volumetric_divisor is not None)
+        divisor = x.volumetric_divisor if x.volumetric_divisor is not None else dv.value
+        l, w, h = (float(d) for d in x.dims_cm)
+        vol_kg = l * w * h / divisor
+        chargeable = max(x.weight_kg, vol_kg)
+        if vol_kg > x.weight_kg:
+            warnings.append(
+                f"Freight is charged on the box size: {l:g} x {w:g} x {h:g} cm is {vol_kg:.2f} kg volumetric "
+                f"(divided by {divisor:g}) against {x.weight_kg:g} kg actual. A smaller box cuts freight."
+            )
+    # Advertising, payout and fulfilment: 0 unless the seller enters theirs, and labelled so.
+    extra = {}
+    for key, given, label, unit in (
+        ("ad_rate", x.ad_rate, "Advertising (share of sales)", "ratio"),
+        ("payout_rate", x.payout_rate, "Payout and currency conversion fee", "ratio"),
+        ("fulfilment_fee", x.fulfilment_fee, "Fulfilment fee per order", m["currency"]),
+    ):
+        r = data.rate(key, "ALL")
+        _prov(prov, replace(r, unit=unit), label, override=given is not None)
+        extra[key] = given if given is not None else r.value
     ra = data.rate("return_alpha", "ALL")
     rb = data.rate("return_beta", "ALL")
     _prov(prov, ra, "Return-rate prior", override=x.return_rate is not None)
@@ -192,12 +255,16 @@ def build_params(x: Inputs) -> Params:
         fee_high=fee_high if x.fee_rate is None else None,
         fx_mean=x.fx if x.fx is not None else fx_r.value,
         fx_sd=fx_sd.value,
-        freight_cny=(x.freight_cny_per_kg if x.freight_cny_per_kg is not None else fr_r.value) * x.weight_kg,
+        freight_cny=(x.freight_cny_per_kg if x.freight_cny_per_kg is not None else fr_r.value) * chargeable,
         cogs_cny=x.cogs_cny,
         ret_alpha=alpha,
         ret_beta=beta,
         duty_mode="ad_valorem",
         target=x.target_margin,
+        ad_rate=extra["ad_rate"],
+        payout_rate=extra["payout_rate"],
+        fulfil=extra["fulfilment_fee"],
+        chargeable_kg=chargeable,
         provenance=prov,
         warnings=warnings,
     )
@@ -278,9 +345,9 @@ def _goods_cost(p: Params, fx):
 
 
 def _denom(p: Params) -> float:
-    d = 1 / (1 + p.vat) - p.fee - p.target / (1 + p.vat)
+    d = 1 / (1 + p.vat) - p.pct - p.target / (1 + p.vat)
     if d <= 0:
-        raise EngineError("Target margin is unreachable with these fee and VAT rates")
+        raise EngineError("Target margin is unreachable with these fee, advertising and VAT rates")
     return d
 
 
@@ -292,17 +359,23 @@ def waterfall(p: Params) -> dict:
     G = _goods_cost(p, fx)
     duty = G - cogs - freight
     returns = r * G
-    price = (G * (1 + r) + p.fee_fixed) / _denom(p)
+    price = (G * (1 + r) + p.per_order) / _denom(p)
     net = price / (1 + p.vat)
     vat = price - net
     fee = p.fee * price + p.fee_fixed
-    margin = net - fee - G - returns
+    ads = p.ad_rate * price
+    payout = p.payout_rate * net
+    fulfil = p.fulfil
+    margin = net - fee - ads - payout - fulfil - G - returns
     steps = [
         ("cogs", "COGS", cogs),
         ("freight", "Freight", freight),
         ("duty", "Duty", duty),
         ("returns", "Returns", returns),
         ("fee", "Platform fee", fee),
+        ("ads", "Advertising", ads),
+        ("fulfilment", "Fulfilment", fulfil),
+        ("payout", "Payout fee", payout),
         ("vat", "VAT", vat),
         ("margin", "Margin", margin),
     ]
@@ -322,9 +395,9 @@ def simulate(p: Params, price: float, paths: int = 5000, seed: int = 20261108) -
     r = rng.beta(p.ret_alpha, p.ret_beta, paths)
     G = _goods_cost(p, fx)
     net = price / (1 + p.vat)
-    profit = net - p.fee * price - p.fee_fixed - G * (1 + r)
+    profit = net - p.pct * price - p.per_order - G * (1 + r)
     margins = profit / net
-    required = (G * (1 + r) + p.fee_fixed) / _denom(p)
+    required = (G * (1 + r) + p.per_order) / _denom(p)
     hist, edges = np.histogram(margins, bins=40)
     return {
         "paths": paths,
@@ -343,7 +416,7 @@ def stress(p: Params, price: float) -> list[dict]:
         net = price / (1 + q.vat)
         r = q.ret_alpha / (q.ret_alpha + q.ret_beta)
         G = _goods_cost(q, q.fx_mean)
-        return (net - q.fee * price - q.fee_fixed - G * (1 + r)) / net
+        return (net - q.pct * price - q.per_order - G * (1 + r)) / net
 
     from dataclasses import replace
 
@@ -356,6 +429,8 @@ def stress(p: Params, price: float) -> list[dict]:
     ]
     if p.fee_high is not None and p.fee_high > p.fee + 1e-9:
         rows.append((f"Platform fee at the high end ({p.fee_high:.0%})", replace(p, fee=p.fee_high)))
+    if p.ad_rate > 0:  # ad costs rise when a competitor bids up the same keywords
+        rows.append((f"Advertising +5 points ({p.ad_rate + 0.05:.0%} of sales)", replace(p, ad_rate=p.ad_rate + 0.05)))
     if p.duty_mode == "ad_valorem":
         rows.append(("Duty +10 percentage points", replace(p, duty_rate=p.duty_rate + 0.10)))
     else:
@@ -395,6 +470,8 @@ def landed_cost(x: Inputs) -> dict:
             "target_margin": x.target_margin,
             "item_categories": x.item_categories,
             "platform": x.platform,
+            "dims_cm": list(x.dims_cm) if x.dims_cm is not None else None,
+            "chargeable_weight_kg": round(p.chargeable_kg, 3),
         },
         "waterfall": wf,
         "monte_carlo": sim,
@@ -413,7 +490,9 @@ def landed_cost(x: Inputs) -> dict:
         if duty_share >= 0.10:
             options = []
             for n in (2, 3):
-                q = build_params(Inputs(**{**x.__dict__, "cogs_cny": x.cogs_cny * n, "weight_kg": x.weight_kg * n}))
+                # n boxes in one parcel weigh n times the chargeable weight of one (box size included)
+                q = build_params(Inputs(**{**x.__dict__, "cogs_cny": x.cogs_cny * n, "weight_kg": p.chargeable_kg * n,
+                                           "dims_cm": None}))
                 if q.duty_mode != "eu_flat":
                     break
                 pack = waterfall(q)["price"]
@@ -454,15 +533,15 @@ def _mean_return(p: Params) -> float:
 def _profit_at(p: Params, price: float) -> tuple[float, float]:
     """Expected profit and margin per unit at a given list price (FX and returns at their means)."""
     net = price / (1 + p.vat)
-    profit = net - p.fee * price - p.fee_fixed - _goods_cost(p, p.fx_mean) * (1 + _mean_return(p))
+    profit = net - p.pct * price - p.per_order - _goods_cost(p, p.fx_mean) * (1 + _mean_return(p))
     return profit, profit / net
 
 
 def _max_cogs(p: Params, price: float, margin: float) -> float | None:
     """Highest unit cost in CNY that still earns `margin` at list price `price`, everything else unchanged.
-    Inverts price = (G(1 + r) + fee_fixed) / denom for G, then G for COGS. None if no cost is low enough."""
-    denom = 1 / (1 + p.vat) - p.fee - margin / (1 + p.vat)
-    G = (price * denom - p.fee_fixed) / (1 + _mean_return(p))
+    Inverts price = (G(1 + r) + per_order) / denom for G, then G for COGS. None if no cost is low enough."""
+    denom = 1 / (1 + p.vat) - p.pct - margin / (1 + p.vat)
+    G = (price * denom - p.per_order) / (1 + _mean_return(p))
     if p.duty_mode == "eu_flat":
         cogs = (G - p.duty_flat) * p.fx_mean - p.freight_cny
     else:  # G = (cogs + freight) / fx + cogs / fx * duty
@@ -607,7 +686,7 @@ def sweep(x: Inputs, n: int = 61, lo: float = 0.9, hi: float = 1.15) -> dict:
     r = rng.beta(p.ret_alpha, p.ret_beta, x.paths)
     cost = _goods_cost(p, fx) * (1 + r)                       # (paths,)
     net = prices[:, None] / (1 + p.vat)                        # (n, 1)
-    profit = net - p.fee * prices[:, None] - p.fee_fixed - cost[None, :]     # (n, paths)
+    profit = net - p.pct * prices[:, None] - p.per_order - cost[None, :]     # (n, paths)
     margins = profit / net
     return {
         "currency": p.currency,

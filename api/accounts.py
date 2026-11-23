@@ -144,6 +144,9 @@ class Profile(BaseModel):
     freight_cny_per_kg: float | None = Field(default=None, gt=0, le=500)
     return_rate: float | None = Field(default=None, ge=0, le=0.5)
     fx: float | None = Field(default=None, gt=0, le=100)
+    ad_rate: float | None = Field(default=None, ge=0, le=0.5)
+    payout_rate: float | None = Field(default=None, ge=0, le=0.09)
+    fulfilment_fee: float | None = Field(default=None, ge=0, le=100)
 
     @field_validator("category")
     @classmethod

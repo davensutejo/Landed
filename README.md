@@ -316,7 +316,9 @@ Landed vs. the same model (`glm-4.5-air`) without tools, 36 cases, one run each:
 | **United States** | **Indicative lower bound only.** A likely HS line is assumed from the product wording (base duty from the USITC schedule) and the verified 12.5% China Section 301 duty is added. The older Section 301 list duty (7.5% or 25%) is not loaded because sources disagree, so US prices are labelled as a floor. |
 | **Other markets** | **Not supported.** The agent says so instead of guessing. |
 | **Compliance** | PPWR packaging registration (per country), GPSR, WEEE, food contact and lithium battery (UN 3481) flags. These are pre-checks, not legal advice. |
-| **Platform fees** | Sourced commissions for major marketplaces, mostly `secondary` (third-party summaries). An unknown platform gets a flagged 15% placeholder, and a fee the seller types always wins. FBA, ads and payment fees are not modelled. |
+| **Platform fees** | Sourced commissions for major marketplaces, mostly `secondary` (third-party summaries). An unknown platform gets a flagged 15% placeholder, and a fee the seller types always wins. |
+| **Other costs** | Advertising (share of sales), the payout and currency conversion fee, and a fulfilment fee per order are in the price formula, the Monte Carlo and every reverse question. They are 0 until the seller enters them (in chat, in the workspace, or in their saved setup), and the answer names them as "not included" rather than quoting 0%. Stock held in an EU warehouse (e.g. FBA) is imported in bulk under normal customs rules, which Landed does not price. |
+| **Box size** | Optional. Freight is charged on the larger of the actual and the volumetric weight (L × W × H ÷ divisor). The default divisor is 6000 (YunExpress economy line, `secondary`); express couriers use 5000, and the seller can enter their forwarder's. |
 | **Listings** | Drafts in the destination country's language, checked by the guardrail. The seller should review them before publishing. |
 
 ---

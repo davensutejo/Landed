@@ -87,6 +87,11 @@ class CalcIn(BaseModel):
     freight_cny_per_kg: float | None = None
     return_rate: float | None = None
     fx: float | None = None
+    ad_rate: float | None = None
+    payout_rate: float | None = None
+    fulfilment_fee: float | None = None
+    dims_cm: list[float] | None = Field(default=None, min_length=3, max_length=3)
+    volumetric_divisor: float | None = None
     indicative: bool = False
     hs_assumed: bool = False
 
@@ -100,10 +105,11 @@ FX_KEYS = {"fx_cny_per_eur", "fx_cny_per_usd", "fx_horizon_sd"}
 
 
 def snapshot_info() -> dict:
-    """When the tables were last checked (every row except FX), and the date and origin of the FX rates in use."""
+    """The oldest check date of the tables (every row except FX was checked on or after it), and the date and
+    origin of the FX rates in use."""
     rows = data.rates().values()
     return {
-        "snapshot": max(r.snapshot_date for r in rows if r.key not in FX_KEYS and r.snapshot_date),
+        "snapshot": min(r.snapshot_date for r in rows if r.key not in FX_KEYS and r.snapshot_date),
         "fx": fx.status(),
     }
 

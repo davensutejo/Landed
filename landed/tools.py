@@ -33,6 +33,11 @@ _COST_PROPS = {
     "freight_cny_per_kg": {"type": "number", "description": "Seller's own freight quote, if given"},
     "return_rate": {"type": "number", "description": "Seller's own return rate, if given"},
     "fx": {"type": "number", "description": "Seller's own FX rate (CNY per unit of destination currency), if given"},
+    "ad_rate": {"type": "number", "description": "Seller's advertising spend as a share of total sales, e.g. 0.10, if given"},
+    "payout_rate": {"type": "number", "description": "Seller's payout / currency conversion fee, e.g. 0.01, if given"},
+    "fulfilment_fee": {"type": "number", "description": "Seller's fulfilment or pick-and-pack fee per order, in the destination currency, if given"},
+    "dims_cm": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3,
+                "description": "Box size in cm [length, width, height], only if the seller gave it"},
 }
 
 TOOLS = [
@@ -175,6 +180,11 @@ TOOLS = [
 ]
 
 
+# rates.csv keys that default to 0 and are "not included" until the seller enters theirs
+NOT_INCLUDED = {"ad_rate": "advertising", "payout_rate": "payout and currency conversion fee",
+                "fulfilment_fee": "fulfilment fee per order"}
+
+
 def _compact_cost(res: dict) -> dict:
     """Drop the histogram from what the LLM sees (the UI gets the full result)."""
     out = json.loads(json.dumps(res))
@@ -213,6 +223,7 @@ def _compact_cost(res: dict) -> dict:
             f"{p['label']}: " + (f"{p['value'] * 100:g}%" if p.get("unit") == "ratio" else f"{p['value']:g} {p.get('unit') or ''}".strip())
             for p in out["provenance"]
             if p.get("status") == "assumption" and p.get("unit") != "param" and "volatility" not in p["label"].lower()
+            and p.get("key") not in NOT_INCLUDED
         ] + [
             # Beta(alpha, 100 - alpha) prior: alpha is the mean return rate in percent
             f"Return rate: {p['value']:g}%" for p in out["provenance"] if p.get("key") == "return_alpha" and p.get("status") == "assumption"
@@ -226,10 +237,19 @@ def _compact_cost(res: dict) -> dict:
             f"{o['units']} 件装（同款）：整包 {cur}{o['pack_price']:.2f}，折合每件 {cur}{o['price_per_unit']:.2f}，每件便宜 {cur}{o['saving_per_unit']:.2f}"
             for o in (out.get("multipack_tip") or {}).get("options", [])
         ],
+        # costs left at 0 because the seller has not entered them: named, never quoted as "0%"
+        "not_included": [
+            NOT_INCLUDED[p["key"]] for p in out["provenance"]
+            if p.get("key") in NOT_INCLUDED and p.get("status") == "assumption" and not p.get("value")
+        ],
+        "chargeable_weight": (
+            f"{out['inputs']['chargeable_weight_kg']:g} kg (box size; actual {out['inputs']['weight_kg']:g} kg)"
+            if out["inputs"].get("dims_cm") and out["inputs"]["chargeable_weight_kg"] > out["inputs"]["weight_kg"] else None
+        ),
         "biggest_risk": next(
             (f"{s['scenario']}: margin {s['margin_pct'] * 100:.1f}%"
              for s in sorted(out["stress"], key=lambda s: s["margin_pct"])
-             if any(k in s["scenario"] for k in ("CNY", "Return", "Freight"))),
+             if any(k in s["scenario"] for k in ("CNY", "Return", "Freight", "Advertising"))),
             None,
         ),
         "profit_per_unit": next((f"{cur}{s['value']:.2f}" for s in out["waterfall"]["steps"] if s["key"] == "margin"), None),
@@ -330,6 +350,7 @@ def _compact_compare(r: dict) -> dict:
 _PRICING_ARGS = {
     "market", "hs_code", "cogs_cny", "weight_kg", "target_margin", "item_categories", "fee_rate", "freight_cny_per_kg",
     "return_rate", "fx", "platform", "fee_category", "indicative", "hs_assumed",
+    "ad_rate", "payout_rate", "fulfilment_fee", "dims_cm", "volumetric_divisor",
 }
 
 
@@ -352,11 +373,7 @@ def dispatch(name: str, args: dict) -> tuple[dict, dict]:
             r = hs.classify(args.get("description", ""), args.get("attributes") or {})
             return r, r
         if name == "landed_cost":
-            allowed = {
-                "market", "hs_code", "cogs_cny", "weight_kg", "target_margin",
-                "item_categories", "fee_rate", "freight_cny_per_kg", "return_rate", "fx", "platform", "fee_category", "indicative", "hs_assumed",
-            }
-            kwargs = {k: v for k, v in args.items() if k in allowed and v is not None}
+            kwargs = {k: v for k, v in args.items() if k in _PRICING_ARGS and v is not None}
             res = engine.landed_cost(engine.Inputs(**kwargs))
             return _compact_cost(res), res
         if name in ("price_check", "compare_eu"):

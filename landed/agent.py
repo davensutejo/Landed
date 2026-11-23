@@ -43,6 +43,8 @@ Hard rules:
    - Duty tip, only if present: copy the display.multipack lines exactly (in Chinese copy display.multipack_zh verbatim) or the bundle_tip ("may qualify" as one set). Also warn in a few words that adding a different kind of item (e.g. a free gift) adds EUR 3 duty.
    - Must do before selling: each blocker flag in one plain sentence, taken from the flag's `plain` field (`plain_zh` in Chinese). A seller does not know what GPSR, PPWR, WEEE, EPR, IOSS or HS mean: do not write those abbreviations or the regulation names without that plain explanation next to them.
    - Replace these demo assumptions: the inputs in display.assumptions_to_replace, unless the seller gave them.
+   - Not included yet, only if display.not_included is not empty: name those costs in one short line and say the margin is lower if the seller pays them (enter them to include them). Never write them as 0%.
+   - Box size, only if display.chargeable_weight is set: one line saying freight is charged on the box size (copy display.chargeable_weight) and a smaller box cuts freight.
    - One short line: decision support, not a licensed customs broker.
    No tables in a price answer. Use the exact strings in the display block.
 8. For a listing request: call compliance_flags, then write the listing copy in the language of the destination market: {LISTING_LANGUAGES}. The seller's chat language does not change this; only the destination does, and if the seller names no market ask which one. Section headings of the seller-only checklist stay in the seller's chat language. The listing may state ONLY product facts the seller gave you. Where a listing would normally have a spec the seller did not give, write a placeholder such as [Leistung in W: bitte ergänzen]. NEVER claim a certification, test or property (CE, RoHS, BPA-free, TÜV, UN 38.3, dishwasher-safe, waterproof…) unless the seller said they have it; compliance flags are requirements, not achievements. Put the flags in a separate seller-only checklist AFTER the listing, each as its `plain` sentence (`plain_zh` for a Chinese seller) with its source URL.
@@ -252,8 +254,9 @@ def apply_profile(name: str, args: dict, profile: dict) -> dict:
     if name in PRICING_TOOLS:
         for k in PROFILE_OVERRIDES:
             if args.get(k) is None and k in profile:
-                # CNY per EUR is not CNY per USD: the saved rate only applies to the market it was saved for
-                if k == "fx" and profile.get("market") != args.get("market"):
+                # CNY per EUR is not CNY per USD, and a €3 fulfilment fee is not $3: a saved figure in a currency
+                # applies only to markets in the currency of the market it was saved for
+                if k in profile_mod.IN_CURRENCY and profile_mod.currency(profile.get("market")) != profile_mod.currency(args.get("market") or profile.get("market")):
                     continue
                 args[k] = profile[k]
         for k in ("market", "target_margin"):
@@ -431,7 +434,31 @@ FX_RX = [
     re.compile(rf"(?P<cur>{_EUR}|{_USD})\s*/\s*CNY\s*(?:=|:|is|at)?\s*{_N}", re.I),
     re.compile(rf"(?:FX|exchange rate|汇率){_GAP}{_N}(?!\s*(?:%|％|\.\d))", re.I),  # no currency named: any market
 ]
-_RANGES = {"fee_rate": (0, 60), "return_rate": (0, 60), "freight_cny_per_kg": (0.1, 500), "fx": (1, 20)}
+# "ads" is a short, common word: its figure must follow in the same phrase (no comma), so "ads, Germany 25%" is
+# not an ad spend of 25%.
+_TIGHT = r"[^\d\n;；。,，]{0,16}?"
+STATED_RX["ad_rate"] = [
+    re.compile(rf"(?:ad spend|ads? cost|advertising(?: cost| spend)?|ads|TACoS|PPC|广告费?|推广费?|广告占比){_TIGHT}{_N}\s*(?:%|％)", re.I),
+    # "N% on ads" / "N% TACoS" only: a bare "25% ads" is too often the margin followed by the next item
+    re.compile(rf"{_N}\s*(?:%|％)\s*(?:of (?:sales|revenue) )?(?:on|for|in) ad(?:s|vertising)\b|{_N}\s*(?:%|％)\s*TACoS", re.I),
+]
+STATED_RX["payout_rate"] = [
+    re.compile(rf"(?:payout fee|withdrawal fee|conversion fee|currency conversion|FX fee|收款费?|提现费?|结汇费?|换汇费?){_GAP}{_N}\s*(?:%|％)", re.I),
+]
+_RANGES = {"fee_rate": (0, 60), "return_rate": (0, 60), "freight_cny_per_kg": (0.1, 500), "fx": (1, 20),
+           "ad_rate": (0, 59), "payout_rate": (0, 9.9)}
+_PCT_FIELDS = ("fee_rate", "return_rate", "ad_rate", "payout_rate")
+# A per-order fulfilment fee in the destination currency: "FBA fee €3.20", "fulfilment fee 2.5 EUR", "尾程 3 欧元".
+FULFIL_RX = re.compile(
+    rf"(?:fulfil?ment fee|fulfil?ment|FBA fee|FBA|pick(?:ing)?[- ]and[- ]pack(?:ing)?|3PL fee|last[- ]mile|配送费|尾程费?|仓储配送费?)"
+    rf"{_GAP}(?:(?:€|\$|EUR|USD)\s*{_N}|{_N}\s*(?:€|\$|EUR\b|USD\b|欧元|美元|euros?|dollars?))",
+    re.I,
+)
+# A box size: "30x20x10 cm", "30 × 20 × 10cm", "箱规 30*20*10 厘米"; mm converted to cm.
+DIMS_RX = re.compile(
+    r"(?<![\d.])(\d+(?:\.\d+)?)\s*(?:cm|厘米)?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(?:cm|厘米)?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(cm|厘米|mm|毫米)",
+    re.I,
+)
 
 
 def stated_overrides(seller_texts: list[str], market: str | None) -> dict:
@@ -439,11 +466,19 @@ def stated_overrides(seller_texts: list[str], market: str | None) -> dict:
     text = _DECIMAL_COMMA.sub(r"\1.\2", "\n".join(seller_texts))
     out: dict = {}
     for field, rxs in STATED_RX.items():
-        vals = {float(m.group(1)) for rx in rxs for m in rx.finditer(text)}
+        vals = {float(next(g for g in m.groups() if g)) for rx in rxs for m in rx.finditer(text)}
         vals = {v for v in vals if _RANGES[field][0] <= v <= _RANGES[field][1]}
         if len(vals) == 1:
             v = vals.pop()
-            out[field] = v / 100 if field in ("fee_rate", "return_rate") else v
+            out[field] = v / 100 if field in _PCT_FIELDS else v
+    fulfil = {float(next(g for g in m.groups() if g)) for m in FULFIL_RX.finditer(text)}
+    fulfil = {v for v in fulfil if 0 <= v <= 100}
+    if len(fulfil) == 1:
+        out["fulfilment_fee"] = fulfil.pop()
+    dims = {tuple(float(g) / (10 if m.group(4).lower() in ("mm", "毫米") else 1) for g in m.groups()[:3])
+            for m in DIMS_RX.finditer(text)}
+    if len(dims) == 1:
+        out["dims_cm"] = list(dims.pop())
     want = "USD" if market == "US" else "EUR"
     by_cur: dict[str, set[float]] = {"EUR": set(), "USD": set(), None: set()}
     for rx in FX_RX:

@@ -76,6 +76,6 @@ def test_health_reports_real_dates():
     from api.main import app
 
     body = TestClient(app).get("/api/health").json()
-    assert body["ok"] and body["snapshot"] >= "2026-11-08"
+    assert body["ok"] and body["snapshot"] == "2026-11-08"  # the oldest check date, not the newest row
     assert body["fx"]["date"] == data.shipped_rates()[("fx_cny_per_eur", "EU")].snapshot_date
     assert body["fx"]["live"] is False  # tests never fetch

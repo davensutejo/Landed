@@ -7,6 +7,8 @@ import { esc } from '../lib/markdown.js';
 import { postJSON } from '../lib/agentStream.js';
 import { EU, isEU, marketName } from '../lib/markets.js';
 
+// the seller's own numbers, saved with the profile and applied to every price (see landed/profile.py OWN_NUMBERS)
+const OWN_FIELDS = ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx', 'ad_rate', 'payout_rate', 'fulfilment_fee'];
 const icon = (d, extra = '') => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra}</svg>`;
 const ICONS = {
   apparel: icon('<path d="M8 4 3 7l2 4 3-1v10h8V10l3 1 2-4-5-3c-.5 1.5-2 2.5-4 2.5S8.5 5.5 8 4z"/>'),
@@ -164,6 +166,9 @@ const T = {
     fee: (p) => `${p ? p + ' ' : ''}平台佣金（%）`,
     freight: '头程运费（元/kg）',
     returns: '退货率（%）',
+    ads: '广告费，占销售额（%）',
+    payout: '收款/结汇手续费（%）',
+    fulfil: (m) => (m === 'US' ? '每单配送/履约费（$）' : '每单配送/履约费（€）'),
     euCountry: '目的国',
     fx: (m) => (m === 'US' ? '汇率（元/美元）' : '汇率（元/欧元）'),
     revealEyebrow: '为你准备好了',
@@ -224,6 +229,9 @@ const T = {
     fee: (p) => `${p ? p + ' ' : ''}platform fee (%)`,
     freight: 'Freight (¥/kg)',
     returns: 'Return rate (%)',
+    ads: 'Ad spend, share of sales (%)',
+    payout: 'Payout / conversion fee (%)',
+    fulfil: (m) => (m === 'US' ? 'Fulfilment fee per order ($)' : 'Fulfilment fee per order (€)'),
     euCountry: 'Destination country',
     fx: (m) => (m === 'US' ? 'FX (CNY per USD)' : 'FX (CNY per EUR)'),
     revealEyebrow: 'Ready for you',
@@ -421,12 +429,15 @@ export function createOnboarding(h) {
       return head + `<p class="onb__sub">${esc(l.margin)}</p>
         <div class="pills pills--margin" data-multi="margin">${MARGINS.map((m) => `<button type="button" class="pill ${a.target_margin === m ? 'is-on' : ''}" data-v="${m}" aria-pressed="${a.target_margin === m}">${Math.round(m * 100)}%</button>`).join('')}
           <label class="pill pill--input ${a.target_margin && !known ? 'is-on' : ''}"><span>${esc(l.marginOther)}</span><input id="onb-margin" type="number" inputmode="decimal" min="1" max="70" step="0.5" value="${a.target_margin && !known ? +(a.target_margin * 100).toFixed(1) : ''}" placeholder="%" /></label></div>
-        <details class="onb__own" ${['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx'].some((k) => a[k] != null) ? 'open' : ''}><summary>${esc(l.own)}</summary><p class="onb__hint">${esc(l.ownHint)}</p>
+        <details class="onb__own" ${OWN_FIELDS.some((k) => a[k] != null) ? 'open' : ''}><summary>${esc(l.own)}</summary><p class="onb__hint">${esc(l.ownHint)}</p>
           <div class="fields">
             <label class="field"><span>${esc(l.fee(plat))}</span><span class="field__box"><input data-n="fee_rate" data-scale="100" type="number" inputmode="decimal" min="0" max="50" step="0.5" value="${pv(a.fee_rate)}" placeholder="15" /></span></label>
             <label class="field"><span>${esc(l.freight)}</span><span class="field__box"><input data-n="freight_cny_per_kg" type="number" inputmode="decimal" min="1" max="500" step="1" value="${a.freight_cny_per_kg ?? ''}" placeholder="45" /></span></label>
             <label class="field"><span>${esc(l.returns)}</span><span class="field__box"><input data-n="return_rate" data-scale="100" type="number" inputmode="decimal" min="0" max="50" step="0.5" value="${pv(a.return_rate)}" placeholder="8" /></span></label>
             <label class="field"><span>${esc(l.fx(a.market))}</span><span class="field__box"><input data-n="fx" type="number" inputmode="decimal" min="0.1" max="100" step="0.01" value="${a.fx ?? ''}" placeholder="7.5" /></span></label>
+            <label class="field"><span>${esc(l.ads)}</span><span class="field__box"><input data-n="ad_rate" data-scale="100" type="number" inputmode="decimal" min="0" max="50" step="0.5" value="${pv(a.ad_rate)}" placeholder="0" /></span></label>
+            <label class="field"><span>${esc(l.payout)}</span><span class="field__box"><input data-n="payout_rate" data-scale="100" type="number" inputmode="decimal" min="0" max="9" step="0.1" value="${pv(a.payout_rate)}" placeholder="0" /></span></label>
+            <label class="field"><span>${esc(l.fulfil(a.market))}</span><span class="field__box"><input data-n="fulfilment_fee" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="${a.fulfilment_fee ?? ''}" placeholder="0" /></span></label>
           </div></details>`;
     }
     return `<div class="reveal" id="onb-reveal"><p class="reveal__eyebrow">${esc(l.revealEyebrow)}</p><div class="reveal__load">${esc(l.loading)}</div></div>`;
@@ -537,7 +548,7 @@ export function createOnboarding(h) {
         const k = inp.dataset.n;
         const v = parseFloat(inp.value);
         const scale = +(inp.dataset.scale || 1);
-        const zeroOK = k === 'fee_rate' || k === 'return_rate';
+        const zeroOK = ['fee_rate', 'return_rate', 'ad_rate', 'payout_rate', 'fulfilment_fee'].includes(k);
         a[k] = Number.isFinite(v) && (v > 0 || (zeroOK && v === 0)) ? +(v / scale).toFixed(4) : undefined;
         paintSide();
       })
@@ -581,7 +592,7 @@ export function createOnboarding(h) {
     const kinds = a.parcel === 'mixed' ? 2 : 1;
     const profile = clean(a);
     const own = {};
-    ['fee_rate', 'freight_cny_per_kg', 'return_rate'].forEach((k) => a[k] != null && (own[k] = a[k]));
+    ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'ad_rate', 'payout_rate', 'fulfilment_fee'].forEach((k) => a[k] != null && (own[k] = a[k]));
     if (a.fx != null && isEU(market)) own.fx = a.fx;
 
     let calc = null;

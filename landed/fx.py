@@ -27,7 +27,7 @@ SOURCE = "https://data-api.ecb.europa.eu/service/data/EXR/D.CNY.EUR.SP00.A"
 HORIZON = 42  # trading days, about 60 calendar days
 MAX_JUMP = 0.15  # a refresh may move a rate at most 15% away from the shipped snapshot
 REFRESH_S = 24 * 3600
-RETRY_S = 3600
+RETRY_S = 600  # after a failed fetch (the ECB API sometimes times out), try again in 10 minutes
 
 log = logging.getLogger("landed.fx")
 _status: dict = {"live": False, "date": None, "checked_at": None, "error": None}
@@ -135,7 +135,7 @@ def start_refresher(wait_s: float = 5.0) -> bool:
 
     Startup waits up to `wait_s` for the first refresh, so the first visitor after a cold start sees the same FX
     date in the header as in the prices. A slow or unreachable ECB only costs those seconds: the shipped snapshot
-    stays in use and the thread keeps trying every hour."""
+    stays in use and the thread tries again every 10 minutes until a fetch works, then daily."""
     global _started
     if _started or not enabled():
         return False

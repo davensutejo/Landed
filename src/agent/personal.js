@@ -7,7 +7,7 @@ import { postJSON } from '../lib/agentStream.js';
 import { createOnboarding, nicheInfo, NICHE_LIST, catLabel, nicheLabel, platformLabel, COST_BANDS } from './onboarding.js';
 
 const KEY = 'landed-profile';
-const OWN_KEYS = ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx'];
+const OWN_KEYS = ['fee_rate', 'freight_cny_per_kg', 'return_rate', 'fx', 'ad_rate', 'payout_rate', 'fulfilment_fee'];
 import { marketName } from '../lib/markets.js';
 import { money, pct } from './charts.js';
 
@@ -71,7 +71,10 @@ const P = {
     margin: '目标毛利',
     fee: '平台佣金',
     freight: '运费',
-    returns: '退货率'
+    returns: '退货率',
+    ads: '广告费',
+    payout: '收款手续费',
+    fulfil: '每单配送费'
   },
   en: {
     login: 'Sign in',
@@ -132,7 +135,10 @@ const P = {
     margin: 'Target margin',
     fee: 'Platform fee',
     freight: 'Freight',
-    returns: 'Return rate'
+    returns: 'Return rate',
+    ads: 'Ads',
+    payout: 'Payout fee',
+    fulfil: 'Fulfilment'
   }
 };
 
@@ -316,6 +322,9 @@ export function createPersonal(h) {
     if (p.fee_rate != null) out.push(`${l.fee} ${+(p.fee_rate * 100).toFixed(1)}%`);
     if (p.freight_cny_per_kg != null) out.push(`${l.freight} ¥${p.freight_cny_per_kg}/kg`);
     if (p.return_rate != null) out.push(`${l.returns} ${+(p.return_rate * 100).toFixed(1)}%`);
+    if (p.ad_rate != null) out.push(`${l.ads} ${+(p.ad_rate * 100).toFixed(1)}%`);
+    if (p.payout_rate != null) out.push(`${l.payout} ${+(p.payout_rate * 100).toFixed(1)}%`);
+    if (p.fulfilment_fee != null) out.push(`${l.fulfil} ${p.market === 'US' ? '$' : '€'}${p.fulfilment_fee}`);
     return out;
   }
 
